@@ -1,0 +1,3 @@
+[workspace]
+
+members = ["project_core", "line_core", "cli_core", "scrapetoon"]
