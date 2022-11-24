@@ -7,7 +7,7 @@ use std::collections::LinkedList;
 pub struct ChapterInfo {
     pub chapter_number: u16,
     pub likes: u32,
-    pub date: String
+    pub date: String,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq)]
@@ -42,16 +42,4 @@ impl SeriesInfo {
 
         accumulator
     }
-    
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn it_works() {
-//         let result = add(2, 2);
-//         assert_eq!(result, 4);
-//     }
-// }

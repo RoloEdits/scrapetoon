@@ -14,7 +14,7 @@ pub enum SourceData {
     Daily {
         /// Path to save the output file
         #[arg(short = 'o', long = "output")]
-         output: String,
+        output: String,
     },
 
     /// Scrapes a stories page
@@ -30,5 +30,5 @@ pub enum SourceData {
         /// The final page, where the story starts
         #[arg(short = 'e', long = "end-page")]
         end: u16,
-    }
+    },
 }

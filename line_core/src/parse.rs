@@ -1,43 +1,44 @@
 // #![allow(unused_variables, dead_code)]
 
-use core::time;
-use std::{thread};
 use chrono::NaiveDate;
+use core::time;
 use hashlink::LinkedHashSet;
-use scraper::{Html, Selector, ElementRef};
+use scraper::{ElementRef, Html, Selector};
+use std::thread;
 
-use project_core::ResponseFactory;
 use cli_core::ProgressBarFactory;
+use project_core::ResponseFactory;
 
 use super::*;
 
 pub fn series_info(end: u16, input_url: &str) -> SeriesInfo {
-
     let (genre, _id) = parse_url_info(&input_url);
 
-    let mut chapter_info_list= LinkedList::new();
+    let mut chapter_info_list = LinkedList::new();
 
-    let (title, author, status, release_day, views, subscribers, rating) = parse_series_page_info(&input_url);
+    let (title, author, status, release_day, views, subscribers, rating) =
+        parse_series_page_info(&input_url);
 
-    parse_chapter_list_pages( end, &input_url, &mut chapter_info_list);
+    parse_chapter_list_pages(end, &input_url, &mut chapter_info_list);
 
-SeriesInfo { 
-    title,
-    author,
-    genre,
-    status,
-    release_day,
-    chapter_info_list,
-    views,
-    subscribers,
-    rating
-}
+    SeriesInfo {
+        title,
+        author,
+        genre,
+        status,
+        release_day,
+        chapter_info_list,
+        views,
+        subscribers,
+        rating,
+    }
 }
 
 // Series Helpers
-fn parse_url_info(url: &str) -> (String,  u16) {
-
-    let reg = regex![r"https://www.webtoons.com/../(?P<genre>.+)/(?P<title>.+)/list\?title_no=(?P<id>\d+)"];
+fn parse_url_info(url: &str) -> (String, u16) {
+    let reg = regex![
+        r"https://www.webtoons.com/../(?P<genre>.+)/(?P<title>.+)/list\?title_no=(?P<id>\d+)"
+    ];
 
     let cap = reg.captures(url).unwrap();
 
@@ -46,24 +47,32 @@ fn parse_url_info(url: &str) -> (String,  u16) {
 
 // Series Page
 fn parse_series_page_info(url: &str) -> (String, String, String, String, u64, u32, f32) {
+    let html = if let Ok(html_response) = ResponseFactory::get(&url) {
+        html_response
+    } else {
+        panic!("Error conncting to URL webpage: {}", url)
+    }
+    .text()
+    .expect("Error getting HTML from response");
 
-        let html = if let Ok(html_response) = ResponseFactory::get(&url){
-            html_response
-        } else {
-            panic!("Error conncting to URL webpage: {}", url)
-        }.text()
-        .expect("Error getting HTML from response");
+    let title = parse_series_page_title(&html);
+    let author = parse_series_page_author(&html);
+    let (release_day, status) = parse_series_page_release_day_and_status(&html);
+    let views = parse_series_page_views(&html);
+    let subscribers = parse_series_page_subscribers(&html);
+    let rating = parse_series_page_rating(&html);
 
-        let title = parse_series_page_title(&html);
-        let author = parse_series_page_author(&html);
-        let (release_day, status) = parse_series_page_release_day_and_status(&html);
-        let views = parse_series_page_views(&html);
-        let subscribers = parse_series_page_subscribers(&html);
-        let rating = parse_series_page_rating(&html);
+    thread::sleep(time::Duration::from_secs(3));
 
-        thread::sleep(time::Duration::from_secs(3));
-
-        (title, author, status, release_day, views, subscribers, rating)
+    (
+        title,
+        author,
+        status,
+        release_day,
+        views,
+        subscribers,
+        rating,
+    )
 }
 
 fn parse_series_page_title(html: &str) -> String {
@@ -100,20 +109,28 @@ fn parse_series_page_subscribers(html: &str) -> u32 {
 
     let subscribers_element = html.select(&subscribers_selector);
 
-    let mut result: String = String::new();  
+    let mut result: String = String::new();
 
-    let mut iteration = 0; 
+    let mut iteration = 0;
     for element in subscribers_element {
         if iteration == 1 {
             result = element.text().collect::<Vec<_>>()[0].to_string();
             break;
         }
         iteration += 1;
-    };
+    }
 
     let subscribers = match result {
-        sub_text if sub_text.ends_with('M') =>  (sub_text.replace("M", "").parse::<f32>().expect(&format!("Error! Couldn't get subscriber count. Value ={}", sub_text)) * 1_000_000.0) as u32,
-        sub_text => sub_text.replace(",", "").parse::<u32>().expect(&format!("Error! Couldn't get subscriber count. Value ={}", sub_text))
+        sub_text if sub_text.ends_with('M') => {
+            (sub_text.replace("M", "").parse::<f32>().expect(&format!(
+                "Error! Couldn't get subscriber count. Value ={}",
+                sub_text
+            )) * 1_000_000.0) as u32
+        }
+        sub_text => sub_text.replace(",", "").parse::<u32>().expect(&format!(
+            "Error! Couldn't get subscriber count. Value ={}",
+            sub_text
+        )),
     };
 
     subscribers
@@ -125,7 +142,7 @@ fn parse_series_page_views(html: &str) -> u64 {
 
     let views_element = html.select(&views_selector);
 
-    let mut result: String = String::new();  
+    let mut result: String = String::new();
 
     let iteration = 0;
     for element in views_element {
@@ -133,25 +150,37 @@ fn parse_series_page_views(html: &str) -> u64 {
             result = element.text().collect::<Vec<_>>()[0].to_string();
             break;
         }
-    };
+    }
 
     let views = match result {
-        sub_text if sub_text.ends_with('M') =>  (sub_text.replace("M", "").parse::<f32>().expect(&format!("Error! Couldn't get view count. Value ={}", sub_text)) * 1_000_000.0) as u64,
-        sub_text if sub_text.ends_with('B') =>  (sub_text.replace("B", "").parse::<f32>().expect(&format!("Error! Couldn't get view count. Value ={}", sub_text)) * 1_000_000_000.0) as u64,
-        sub_text => sub_text.replace(",", "").parse::<u64>().expect(&format!("Error! Couldn't get view count. Value ={}", sub_text))
+        sub_text if sub_text.ends_with('M') => {
+            (sub_text.replace("M", "").parse::<f32>().expect(&format!(
+                "Error! Couldn't get view count. Value ={}",
+                sub_text
+            )) * 1_000_000.0) as u64
+        }
+        sub_text if sub_text.ends_with('B') => {
+            (sub_text.replace("B", "").parse::<f32>().expect(&format!(
+                "Error! Couldn't get view count. Value ={}",
+                sub_text
+            )) * 1_000_000_000.0) as u64
+        }
+        sub_text => sub_text.replace(",", "").parse::<u64>().expect(&format!(
+            "Error! Couldn't get view count. Value ={}",
+            sub_text
+        )),
     };
 
     views
 }
 
 fn parse_series_page_release_day_and_status(html: &str) -> (String, String) {
-
     let html = Html::parse_document(&html.replace("EVERY ", "").replace("UP", ""));
     let day_selector = Selector::parse(r"p.day_info").unwrap();
 
     let day_element = html.select(&day_selector);
 
-    let mut result: String = String::new();  
+    let mut result: String = String::new();
 
     let iteration = 0;
     for element in day_element {
@@ -159,17 +188,17 @@ fn parse_series_page_release_day_and_status(html: &str) -> (String, String) {
             result = element.text().collect::<Vec<_>>()[0].to_string();
             break;
         }
-    };
+    }
 
     let (day, status) = match result {
-        sub_text if sub_text.starts_with("SUN") =>  ("sunday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("MON") =>  ("monday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("TUE") =>  ("tuesday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("WED") =>  ("wednesday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("THU") =>  ("thursday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("FRI") =>  ("friday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("SAT") =>  ("saturday".to_string(), "ongoing".to_string()),
-        _ => ("completed".to_string(), "completed".to_string())
+        sub_text if sub_text.starts_with("SUN") => ("sunday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("MON") => ("monday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("TUE") => ("tuesday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("WED") => ("wednesday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("THU") => ("thursday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("FRI") => ("friday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("SAT") => ("saturday".to_string(), "ongoing".to_string()),
+        _ => ("completed".to_string(), "completed".to_string()),
     };
 
     (day, status)
@@ -191,9 +220,8 @@ fn parse_series_page_author(html: &str) -> String {
 
             without_link
         }
-
     };
-    
+
     let author_text = author_fragment.text().next().unwrap();
 
     author_text.trim().to_lowercase()
@@ -201,35 +229,31 @@ fn parse_series_page_author(html: &str) -> String {
 
 // Chapter List
 fn parse_chapter_list_pages(end: u16, input_url: &str, chapter_info: &mut LinkedList<ChapterInfo>) {
-    
     let bar = ProgressBarFactory::new(end);
 
     for page in 1..=end {
-    
         let url = format!("{}&page={}", input_url, page);
 
-       
+        let html_response = match ResponseFactory::get(&url) {
+            Ok(ok) => ok,
+            Err(_) => {
+                eprintln!("Error connecting to webpage, attempting to save progress and exit...");
 
-            let html_response = match ResponseFactory::get(&url){
-                Ok(ok) => ok,
-                Err(_) => {
-                    eprintln!("Error connecting to webpage, attempting to save progress and exit...");
-                
-                    if chapter_info.is_empty() {
-                        panic!("Nothing to save, exiting.");
-                    }
-    
-                    break;
+                if chapter_info.is_empty() {
+                    panic!("Nothing to save, exiting.");
                 }
-            }.text()
-            .unwrap();
-    
-            parse_each_chapters_chapter_info(&html_response, chapter_info);
-    
-            thread::sleep(time::Duration::from_secs(3));
-    
-            bar.inc(1);
-        
+
+                break;
+            }
+        }
+        .text()
+        .unwrap();
+
+        parse_each_chapters_chapter_info(&html_response, chapter_info);
+
+        thread::sleep(time::Duration::from_secs(3));
+
+        bar.inc(1);
     }
 }
 
@@ -239,11 +263,14 @@ fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<Ch
     let chapter_selector = Selector::parse("ul#_listUl>li").unwrap();
 
     for chapter in html.select(&chapter_selector) {
-
         let chapter_number = parse_chapter_number(&chapter);
         let likes = parse_chapter_like_amount(&chapter);
         let date = parse_chapter_date(&chapter);
-        chapter_info.push_back(ChapterInfo{chapter_number, likes, date})
+        chapter_info.push_back(ChapterInfo {
+            chapter_number,
+            likes,
+            date,
+        })
     }
 }
 
@@ -304,16 +331,16 @@ fn parse_chapter_date(html: &ElementRef) -> String {
 
 // Daily Schedule
 pub fn parse_daily_schedule() -> LinkedHashSet<DailyScheduleInfo> {
-
     const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 
     let mut series: LinkedHashSet<DailyScheduleInfo> = LinkedHashSet::new();
 
-    let html = if let Ok(html_response) = ResponseFactory::get(&DAILY_SCHEDULE){
+    let html = if let Ok(html_response) = ResponseFactory::get(&DAILY_SCHEDULE) {
         html_response
     } else {
         panic!("Error conncting to URL webpage: {}", DAILY_SCHEDULE)
-    }.text()
+    }
+    .text()
     .expect("Error getting HTML from response");
 
     let html = Html::parse_document(&html);
@@ -327,7 +354,14 @@ pub fn parse_daily_schedule() -> LinkedHashSet<DailyScheduleInfo> {
         let status = parse_daily_schedule_is_completed(&card);
         let release_day = parse_daily_schedule_release_day(&card);
 
-        series.insert(DailyScheduleInfo { title, author, genre, total_likes, status, release_day });
+        series.insert(DailyScheduleInfo {
+            title,
+            author,
+            genre,
+            total_likes,
+            status,
+            release_day,
+        });
     }
     series
 }
@@ -342,7 +376,6 @@ fn parse_daily_schedule_is_completed(card: &ElementRef) -> String {
     let mut result = String::new();
 
     for status_check in card.select(&completed_selector) {
-
         let holder = status_check.text().collect::<Vec<_>>();
 
         if holder.len() == 0 {
@@ -350,12 +383,12 @@ fn parse_daily_schedule_is_completed(card: &ElementRef) -> String {
         }
 
         result = holder[0].to_string();
-    };
+    }
 
     let status = match result {
-        hiatus if hiatus == "HIATUS" =>  "hiatus".to_string(),
+        hiatus if hiatus == "HIATUS" => "hiatus".to_string(),
         completed if completed == "COMPLETED" => "completed".to_string(),
-        _ => "ongoing".to_string()
+        _ => "ongoing".to_string(),
     };
 
     status
@@ -371,8 +404,16 @@ fn parse_daily_schedule_total_likes(card: &ElementRef) -> u32 {
     }
 
     let views = match result {
-        sub_text if sub_text.ends_with('M') =>  (sub_text.replace("M", "").parse::<f32>().expect(&format!("Error! Couldn't get view count. Value ={}", sub_text)) * 1_000_000.0) as u32,
-        sub_text => sub_text.replace(",", "").parse::<u32>().expect(&format!("Error! Couldn't get view count. Value ={}", sub_text))
+        sub_text if sub_text.ends_with('M') => {
+            (sub_text.replace("M", "").parse::<f32>().expect(&format!(
+                "Error! Couldn't get view count. Value ={}",
+                sub_text
+            )) * 1_000_000.0) as u32
+        }
+        sub_text => sub_text.replace(",", "").parse::<u32>().expect(&format!(
+            "Error! Couldn't get view count. Value ={}",
+            sub_text
+        )),
     };
 
     views
@@ -403,7 +444,6 @@ fn parse_daily_schedule_author(card: &ElementRef) -> String {
 }
 
 fn parse_daily_schedule_title(card: &ElementRef) -> String {
-
     let title_selector = Selector::parse("p.subj").unwrap();
 
     let mut result = String::new();
@@ -421,7 +461,6 @@ mod line_parsing_tests {
 
     #[test]
     fn should_parse_rating_936() {
-
         const RATING: &str = r##"<ul class="grade_area">
         <li>
             <span class="ico_view">view</span>
@@ -478,7 +517,6 @@ mod line_parsing_tests {
 
     #[test]
     fn should_parse_subscribers() {
-
         const SUBSCRIBERS_1: &str = r##"<ul class="grade_area">
         <li>
             <span class="ico_view">view</span>
@@ -514,7 +552,7 @@ mod line_parsing_tests {
         </li>
     </ul>"##;
 
-    const SUBSCRIBERS_2: &str = r##"<ul class="grade_area">
+        const SUBSCRIBERS_2: &str = r##"<ul class="grade_area">
     <li>
         <span class="ico_view">view</span>
         <em class="cnt">1B</em>
@@ -558,7 +596,6 @@ mod line_parsing_tests {
 
     #[test]
     fn should_parse_views() {
-
         const VIEWS_1: &str = r##"<ul class="grade_area">
         <li>
             <span class="ico_view">view</span>
@@ -608,12 +645,12 @@ mod line_parsing_tests {
         </li>
     </ul>"##;
 
-    const VIEWS_2: &str = r#"<li>
+        const VIEWS_2: &str = r#"<li>
     <span class="ico_view">view</span>
     <em class="cnt">245,678</em>
 </li>"#;
 
-const VIEWS_3: &str = r#"<li>
+        const VIEWS_3: &str = r#"<li>
     <span class="ico_view">view</span>
     <em class="cnt">1.1M</em>
 </li>"#;
@@ -629,16 +666,20 @@ const VIEWS_3: &str = r#"<li>
 
     #[test]
     fn should_parse_release_day_and_is_completed() {
-        const DAY: &str = r##"<p class="day_info"><span class="txt_ico_up">UP</span>EVERY MONDAY</p>"##;
+        const DAY: &str =
+            r##"<p class="day_info"><span class="txt_ico_up">UP</span>EVERY MONDAY</p>"##;
 
-        const COMPLETED: &str = r##"<p class="day_info"><span class="txt_ico_up">UP</span>COMPLETED</p>"##;
+        const COMPLETED: &str =
+            r##"<p class="day_info"><span class="txt_ico_up">UP</span>COMPLETED</p>"##;
 
         let monday = parse_series_page_release_day_and_status(DAY);
         let completed = parse_series_page_release_day_and_status(COMPLETED);
 
         assert_eq!(monday, ("monday".to_string(), "ongoing".to_string()));
-        assert_eq!(completed, ("completed".to_string(), "completed".to_string()));
-
+        assert_eq!(
+            completed,
+            ("completed".to_string(), "completed".to_string())
+        );
     }
 
     #[test]
@@ -686,11 +727,9 @@ const VIEWS_3: &str = r#"<li>
         let mut result = 0;
 
         for chapter in html.select(&chapter_selector) {
-
             result = parse_chapter_number(&chapter);
-
         }
-     
+
         assert_eq!(result, 24);
     }
 
@@ -719,11 +758,9 @@ const VIEWS_3: &str = r#"<li>
         let mut result = 0;
 
         for chapter in html.select(&chapter_selector) {
-
             result = parse_chapter_like_amount(&chapter);
-
         }
-     
+
         assert_eq!(result, 7_779);
     }
 
@@ -752,12 +789,10 @@ const VIEWS_3: &str = r#"<li>
         let mut result = String::new();
 
         for chapter in html.select(&chapter_selector) {
-
             result = parse_chapter_date(&chapter);
-
         }
-     
-        assert_eq!(result, "Nov 20, 2022");
+
+        assert_eq!(result, "2022-11-20");
     }
 
     #[test]
@@ -776,7 +811,4 @@ const VIEWS_3: &str = r#"<li>
 
         assert_eq!(result, "dark moon: the blood altar");
     }
-
 }
-
-
