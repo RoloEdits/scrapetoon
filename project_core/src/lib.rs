@@ -25,7 +25,7 @@ impl ResponseFactory {
             }
         };
 
-        return Ok(response);
+        Ok(response)
     }
 }
 
@@ -52,13 +52,3 @@ pub fn create_date_folder(filepath: &str) -> String {
 
     date_path
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[test]
-//     fn it_works() {
-
-//     }
-// }
