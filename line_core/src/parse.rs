@@ -224,7 +224,7 @@ fn parse_series_page_author(html: &str) -> String {
     // 66,666 Years: Advent of the Dark Mage is the first example, unknown if the only.
     for text in author_text.trim().replace('\n', "").split_whitespace() {
         result.push_str(text);
-        result.push_str(" ");
+        result.push(' ');
     }
 
     result.trim().to_string()
