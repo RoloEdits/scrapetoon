@@ -1,5 +1,3 @@
-// #![allow(unused_variables, dead_code)]
-
 use chrono::NaiveDate;
 use core::time;
 use hashlink::LinkedHashSet;
@@ -16,8 +14,7 @@ pub fn series_info(end: u16, input_url: &str) -> SeriesInfo {
 
     let mut chapter_info_list = LinkedList::new();
 
-    let (title, author, status, release_day, views, subscribers, rating) =
-        parse_series_page_info(input_url);
+    let (title, author, status, release_day, views, subscribers, rating) = parse_series_page_info(input_url);
 
     parse_chapter_list_pages(end, input_url, &mut chapter_info_list);
 
@@ -89,7 +86,7 @@ fn parse_series_page_title(html: &str) -> String {
         result.push_str(word)
     }
 
-    result.replace(':', ": ").to_lowercase()
+    result.replace(':', ": ")
 }
 
 fn parse_series_page_rating(html: &str) -> f32 {
@@ -111,7 +108,6 @@ fn parse_series_page_subscribers(html: &str) -> u32 {
 
     let mut result: String = String::new();
 
-
     for (iteration, element) in subscribers_element.enumerate() {
         if iteration == 1 {
             result = element.text().collect::<Vec<_>>()[0].to_string();
@@ -119,15 +115,22 @@ fn parse_series_page_subscribers(html: &str) -> u32 {
         }
     }
 
-
-
     match result {
         sub_text if sub_text.ends_with('M') => {
-            (sub_text.replace('M', "").parse::<f32>().unwrap_or_else(|_| panic!("Error! Couldn't get subscriber count. Value ={}",
-                sub_text)) * 1_000_000.0) as u32
+            (sub_text
+                .replace('M', "")
+                .parse::<f32>()
+                .unwrap_or_else(|_| {
+                    panic!("Error! Couldn't get subscriber count. Value ={}", sub_text)
+                })
+                * 1_000_000.0) as u32
         }
-        sub_text => sub_text.replace(',', "").parse::<u32>().unwrap_or_else(|_| panic!("Error! Couldn't get subscriber count. Value ={}",
-            sub_text)),
+        sub_text => sub_text
+            .replace(',', "")
+            .parse::<u32>()
+            .unwrap_or_else(|_| {
+                panic!("Error! Couldn't get subscriber count. Value ={}", sub_text)
+            }),
     }
 }
 
@@ -139,27 +142,32 @@ fn parse_series_page_views(html: &str) -> u64 {
 
     let mut result: String = String::new();
 
-    let iteration = 0;
-    for element in views_element {
+    for (iteration, element) in views_element.enumerate() {
         if iteration == 0 {
             result = element.text().collect::<Vec<_>>()[0].to_string();
             break;
         }
     }
 
-
-
     match result {
         sub_text if sub_text.ends_with('M') => {
-            (sub_text.replace('M', "").parse::<f32>().unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}",
-                sub_text)) * 1_000_000.0) as u64
+            (sub_text
+                .replace('M', "")
+                .parse::<f32>()
+                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
+                * 1_000_000.0) as u64
         }
         sub_text if sub_text.ends_with('B') => {
-            (sub_text.replace('B', "").parse::<f32>().unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}",
-                sub_text)) * 1_000_000_000.0) as u64
+            (sub_text
+                .replace('B', "")
+                .parse::<f32>()
+                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
+                * 1_000_000_000.0) as u64
         }
-        sub_text => sub_text.replace(',', "").parse::<u64>().unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}",
-            sub_text)),
+        sub_text => sub_text
+            .replace(',', "")
+            .parse::<u64>()
+            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text)),
     }
 }
 
@@ -171,8 +179,7 @@ fn parse_series_page_release_day_and_status(html: &str) -> (String, String) {
 
     let mut result: String = String::new();
 
-    let iteration = 0;
-    for element in day_element {
+    for (iteration, element) in day_element.enumerate() {
         if iteration == 0 {
             result = element.text().collect::<Vec<_>>()[0].to_string();
             break;
@@ -198,8 +205,6 @@ fn parse_series_page_author(html: &str) -> String {
     let author_with_link_selector = Selector::parse(r"a.author").unwrap();
     let author_without_link_selector = Selector::parse(r"div.author_area").unwrap();
 
-
-
     let mut author_element = html.select(&author_with_link_selector);
     let author_fragment: ElementRef = match author_element.next() {
         Some(some) => some,
@@ -213,7 +218,16 @@ fn parse_series_page_author(html: &str) -> String {
 
     let author_text = author_fragment.text().next().unwrap();
 
-    author_text.trim().to_lowercase()
+    let mut result = String::new();
+
+    // This is for cases where there are, for some reason, webtoon putting a bunch of tabs and new-lines in the name.
+    // 66,666 Years: Advent of the Dark Mage is the first example, unknown if the only.
+    for text in author_text.trim().replace('\n', "").split_whitespace() {
+        result.push_str(text);
+        result.push_str(" ");
+    }
+
+    result.trim().to_string()
 }
 
 // Chapter List
@@ -341,7 +355,6 @@ pub fn parse_daily_schedule() -> LinkedHashSet<DailyScheduleInfo> {
         let genre = parse_daily_schedule_genre(&card);
         let total_likes = parse_daily_schedule_total_likes(&card);
         let status = parse_daily_schedule_is_completed(&card);
-        let release_day = parse_daily_schedule_release_day(&card);
 
         series.insert(DailyScheduleInfo {
             title,
@@ -349,14 +362,9 @@ pub fn parse_daily_schedule() -> LinkedHashSet<DailyScheduleInfo> {
             genre,
             total_likes,
             status,
-            release_day,
         });
     }
     series
-}
-
-fn parse_daily_schedule_release_day(_card: &ElementRef) -> String {
-    "not impimented yet".to_string()
 }
 
 fn parse_daily_schedule_is_completed(card: &ElementRef) -> String {
@@ -374,8 +382,6 @@ fn parse_daily_schedule_is_completed(card: &ElementRef) -> String {
         result = holder[0].to_string();
     }
 
-
-
     match result {
         hiatus if hiatus == "HIATUS" => "hiatus".to_string(),
         completed if completed == "COMPLETED" => "completed".to_string(),
@@ -392,15 +398,18 @@ fn parse_daily_schedule_total_likes(card: &ElementRef) -> u32 {
         result = likes.text().collect::<Vec<_>>()[0].to_string()
     }
 
-
-
     match result {
         sub_text if sub_text.ends_with('M') => {
-            (sub_text.replace('M', "").parse::<f32>().unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}",
-                sub_text)) * 1_000_000.0) as u32
+            (sub_text
+                .replace('M', "")
+                .parse::<f32>()
+                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
+                * 1_000_000.0) as u32
         }
-        sub_text => sub_text.replace(',', "").parse::<u32>().unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}",
-            sub_text)),
+        sub_text => sub_text
+            .replace(',', "")
+            .parse::<u32>()
+            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text)),
     }
 }
 
@@ -413,7 +422,7 @@ fn parse_daily_schedule_genre(card: &ElementRef) -> String {
         result = genre.text().collect::<Vec<_>>()[0].to_string()
     }
 
-    result.to_lowercase()
+    result
 }
 
 fn parse_daily_schedule_author(card: &ElementRef) -> String {
@@ -425,7 +434,7 @@ fn parse_daily_schedule_author(card: &ElementRef) -> String {
         result = author.text().collect::<Vec<_>>()[0].to_string()
     }
 
-    result.to_lowercase()
+   result
 }
 
 fn parse_daily_schedule_title(card: &ElementRef) -> String {
@@ -437,7 +446,7 @@ fn parse_daily_schedule_title(card: &ElementRef) -> String {
         result = title.text().collect::<Vec<_>>()[0].to_string()
     }
 
-    result.to_lowercase()
+    result
 }
 
 #[cfg(test)]
@@ -679,12 +688,31 @@ mod line_parsing_tests {
 <button type="button" class="ico_info2 _btnAuthorInfo">author info</button>
 </div>"##;
 
-        let author = parse_series_page_author(AUTHOR);
+        const AUTHOR_2: &str = r##"<div class="author_area">
 
+
+
+
+        PASA
+
+
+        ,
+
+
+        TARU
+
+
+        ...
+        <button type="button" class="ico_info2 _btnAuthorInfo">author info</button>
+        </div>"##;
+
+        let author = parse_series_page_author(AUTHOR);
         let author_1 = parse_series_page_author(AUTHOR_1);
+        let author_2 = parse_series_page_author(AUTHOR_2);
 
         assert_eq!(author, "instantmiso".to_string());
-        assert_eq!(author_1, "hybe".to_string());
+        assert_eq!(author_1, "HYBE".to_string());
+        assert_eq!(author_2, "PASA , TARU ...")
     }
 
     #[test]
@@ -789,7 +817,6 @@ mod line_parsing_tests {
                     HYBE
             <button type="button" class="ico_info2 _btnAuthorInfo">author info</button>
         </div>
-
     </div>"#;
 
         let result = parse_series_page_title(TITLE);

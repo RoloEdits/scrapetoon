@@ -12,4 +12,3 @@ cli_core = { path = "../cli_core"}
 csv = "1.1.6"
 hashlink = "0.8.1"
 clap = {version = "4.0.26", features = ["derive"]}
-titlecase = "2.2.1"

@@ -35,7 +35,6 @@ pub fn create_date_folder(filepath: &str) -> String {
     // Equalizes all paths so that an operation to add slashes can be done without worry of doubling up.
     if final_path.ends_with('/') || final_path.ends_with('\\') {
         let remove_last_index = final_path.len() - 1;
-
         final_path = &final_path[..remove_last_index]
     }
 
@@ -51,4 +50,8 @@ pub fn create_date_folder(filepath: &str) -> String {
     };
 
     date_path
+}
+
+pub fn get_current_utc_date() -> String {
+    Utc::now().date_naive().to_string()
 }

@@ -2,7 +2,6 @@ use args::{LineArgs, SourceData};
 use clap::*;
 use project_core::create_date_folder;
 use std::path::Path;
-use titlecase::titlecase;
 
 mod args;
 mod csv;
@@ -35,7 +34,7 @@ fn main() {
             println!("Connecting to Story Page...");
             let info = line_core::parse::series_info(end, &url);
             csv::write_series_info(&date_path, &info);
-            println!("Finshed scraping {}!", titlecase(&info.title))
+            println!("Finshed scraping {}!", info.title)
         }
     }
 }

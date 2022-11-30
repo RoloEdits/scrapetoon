@@ -17,7 +17,6 @@ pub struct DailyScheduleInfo {
     pub genre: String,
     pub total_likes: u32,
     pub status: String,
-    pub release_day: String,
 }
 // There is duplication but doing to keeps implimenting simpler and less cluttered
 #[derive(Debug)]
