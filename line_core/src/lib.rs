@@ -1,6 +1,6 @@
 pub mod parse;
-mod regex;
 
+use project_core::regex;
 use std::collections::LinkedList;
 
 #[derive(Debug)]

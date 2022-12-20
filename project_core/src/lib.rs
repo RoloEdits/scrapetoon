@@ -3,6 +3,7 @@ use core::time;
 use reqwest::{blocking::Response, Error};
 use std::{env, fs, thread};
 
+pub mod regex;
 pub struct ResponseFactory {}
 
 impl ResponseFactory {
