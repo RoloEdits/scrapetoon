@@ -6,7 +6,8 @@ use std::path::Path;
 mod args;
 mod csv;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = LineArgs::parse();
 
     match cli.source {
@@ -19,8 +20,8 @@ fn main() {
             }
 
             println!("Connecting to Daily Schedule...");
-            let daily = line_core::parse::parse_daily_schedule();
-            csv::write_daily_schedule(&date_path, &daily);
+            let daily = line_core::parse_daily_schedule::parse_daily_schedule();
+            csv::write_daily_schedule(&date_path, &daily.await);
             println!("Finshed scraping Daily Schedule!")
         }
         SourceData::Story { url, output, end } => {
@@ -32,7 +33,7 @@ fn main() {
             }
 
             println!("Connecting to Story Page...");
-            let info = line_core::parse::series_info(end, &url);
+            let info = line_core::parse_series_info::series_info(end, &url).await;
             csv::write_series_info(&date_path, &info);
             println!("Finshed scraping {}!", info.title)
         }

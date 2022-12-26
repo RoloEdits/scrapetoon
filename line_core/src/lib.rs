@@ -1,4 +1,7 @@
-pub mod parse;
+pub mod parse_series_info;
+pub mod parse_daily_schedule;
+pub mod parse_chapter_list;
+pub mod parse_comments;
 
 use project_core::regex;
 use std::collections::LinkedList;
@@ -18,7 +21,7 @@ pub struct DailyScheduleInfo {
     pub total_likes: u32,
     pub status: String,
 }
-// There is duplication but doing to keeps implimenting simpler and less cluttered
+
 #[derive(Debug)]
 pub struct SeriesInfo {
     pub title: String,
@@ -40,5 +43,26 @@ impl SeriesInfo {
         }
 
         accumulator
+    }
+}
+pub struct UserComment {
+    pub user: String,
+    pub body: String,
+    pub post_date: String,
+    pub upvotes: u32,
+    pub downvotes: u32,
+    pub reply_count: u16,
+}
+
+impl UserComment {
+    pub fn new( user: String, body: String, post_date: String, upvotes: u32, downvotes: u32, reply_count: u16) -> Self {
+        Self {
+            user,
+            body,
+            post_date,
+            upvotes,
+            downvotes,
+            reply_count,
+        }
     }
 }

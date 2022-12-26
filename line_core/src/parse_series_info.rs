@@ -1,22 +1,20 @@
-use chrono::NaiveDate;
 use core::time;
-use hashlink::LinkedHashSet;
 use scraper::{ElementRef, Html, Selector};
 use std::thread;
-
-use cli_core::ProgressBarFactory;
 use project_core::ResponseFactory;
+
+use crate::parse_chapter_list::parse_chapter_list_pages;
 
 use super::*;
 
-pub fn series_info(end: u16, input_url: &str) -> SeriesInfo {
+pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
     let (genre, _id) = parse_url_info(input_url);
 
     let mut chapter_info_list = LinkedList::new();
 
-    let (title, author, status, release_day, views, subscribers, rating) = parse_series_page_info(input_url);
+    let (title, author, status, release_day, views, subscribers, rating) = parse_series_page_info(input_url).await;
 
-    parse_chapter_list_pages(end, input_url, &mut chapter_info_list);
+    parse_chapter_list_pages(end, input_url, &mut chapter_info_list).await;
 
     SeriesInfo {
         title,
@@ -43,13 +41,14 @@ fn parse_url_info(url: &str) -> (String, u16) {
 }
 
 // Series Page
-fn parse_series_page_info(url: &str) -> (String, String, String, String, u64, u32, f32) {
-    let html = if let Ok(html_response) = ResponseFactory::get(url) {
+async fn parse_series_page_info(url: &str) -> (String, String, String, String, u64, u32, f32) {
+    let html = if let Ok(html_response) = ResponseFactory::get(url).await {
         html_response
     } else {
         panic!("Error conncting to URL webpage: {}", url)
     }
     .text()
+    .await
     .expect("Error getting HTML from response");
 
     let title = parse_series_page_title(&html);
@@ -230,227 +229,8 @@ fn parse_series_page_author(html: &str) -> String {
     result.trim().to_string()
 }
 
-// Chapter List
-fn parse_chapter_list_pages(end: u16, input_url: &str, chapter_info: &mut LinkedList<ChapterInfo>) {
-    let bar = ProgressBarFactory::get_bar(end);
-
-    for page in 1..=end {
-        let url = format!("{}&page={}", input_url, page);
-
-        let html_response = match ResponseFactory::get(&url) {
-            Ok(ok) => ok,
-            Err(_) => {
-                eprintln!("Error connecting to webpage, attempting to save progress and exit...");
-
-                if chapter_info.is_empty() {
-                    panic!("Nothing to save, exiting.");
-                }
-
-                break;
-            }
-        }
-        .text()
-        .unwrap();
-
-        parse_each_chapters_chapter_info(&html_response, chapter_info);
-
-        thread::sleep(time::Duration::from_secs(3));
-
-        bar.inc(1);
-    }
-}
-
-fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<ChapterInfo>) {
-    let html = Html::parse_document(html);
-
-    let chapter_selector = Selector::parse("ul#_listUl>li").unwrap();
-
-    for chapter in html.select(&chapter_selector) {
-        let chapter_number = parse_chapter_number(&chapter);
-        let likes = parse_chapter_like_amount(&chapter);
-        let date = parse_chapter_date(&chapter);
-        chapter_info.push_back(ChapterInfo {
-            chapter_number,
-            likes,
-            date,
-        })
-    }
-}
-
-fn parse_chapter_number(html: &ElementRef) -> u16 {
-    let chapter_number_selector = Selector::parse("span.tx").unwrap();
-
-    let mut result: u16 = 0;
-
-    for element in html.select(&chapter_number_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
-
-        result = chapter_number.replace('#', "").parse::<u16>().unwrap();
-    }
-
-    result
-}
-
-fn parse_chapter_like_amount(html: &ElementRef) -> u32 {
-    let like_selector = Selector::parse(r#"span[class="like_area _likeitArea"]"#).unwrap();
-
-    let mut result: u32 = 0;
-
-    for element in html.select(&like_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[1];
-
-        result = chapter_number.replace(',', "").parse::<u32>().unwrap();
-    }
-
-    result
-}
-
-fn parse_chapter_date(html: &ElementRef) -> String {
-    let date_selector = Selector::parse("span.date").unwrap();
-
-    let mut holder: Vec<&str> = Vec::with_capacity(9);
-
-    for element in html.select(&date_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
-
-        holder.push(chapter_number);
-    }
-
-    let mut result: String = String::new();
-
-    for date in holder {
-        let datetime = NaiveDate::parse_from_str(date, "%b %e, %Y").unwrap();
-
-        // %b %e, %Y -> Jun 3, 2022
-        // %b %d, %Y -> Jun 03, 2022
-        // %F -> 2022-06-03 (ISO 8601)
-        let formatted = datetime.format("%F").to_string();
-
-        result = formatted;
-    }
-
-    result
-}
-
-// Daily Schedule
-pub fn parse_daily_schedule() -> LinkedHashSet<DailyScheduleInfo> {
-    const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
-
-    let mut series: LinkedHashSet<DailyScheduleInfo> = LinkedHashSet::new();
-
-    let html = if let Ok(html_response) = ResponseFactory::get(DAILY_SCHEDULE) {
-        html_response
-    } else {
-        panic!("Error conncting to URL webpage: {}", DAILY_SCHEDULE)
-    }
-    .text()
-    .expect("Error getting HTML from response");
-
-    let html = Html::parse_document(&html);
-    let daily_card = Selector::parse("ul.daily_card>li").unwrap();
-
-    for card in html.select(&daily_card) {
-        let title = parse_daily_schedule_title(&card);
-        let author = parse_daily_schedule_author(&card);
-        let genre = parse_daily_schedule_genre(&card);
-        let total_likes = parse_daily_schedule_total_likes(&card);
-        let status = parse_daily_schedule_is_completed(&card);
-
-        series.insert(DailyScheduleInfo {
-            title,
-            author,
-            genre,
-            total_likes,
-            status,
-        });
-    }
-    series
-}
-
-fn parse_daily_schedule_is_completed(card: &ElementRef) -> String {
-    let completed_selector = Selector::parse("p.icon_area").unwrap();
-
-    let mut result = String::new();
-
-    for status_check in card.select(&completed_selector) {
-        let holder = status_check.text().collect::<Vec<_>>();
-
-        if holder.is_empty() {
-            return "ongoing".to_string();
-        }
-
-        result = holder[0].to_string();
-    }
-
-    match result {
-        hiatus if hiatus == "HIATUS" => "hiatus".to_string(),
-        completed if completed == "COMPLETED" => "completed".to_string(),
-        _ => "ongoing".to_string(),
-    }
-}
-
-fn parse_daily_schedule_total_likes(card: &ElementRef) -> u32 {
-    let likes_selector = Selector::parse("em.grade_num").unwrap();
-
-    let mut result = String::new();
-
-    for likes in card.select(&likes_selector) {
-        result = likes.text().collect::<Vec<_>>()[0].to_string()
-    }
-
-    match result {
-        sub_text if sub_text.ends_with('M') => {
-            (sub_text
-                .replace('M', "")
-                .parse::<f32>()
-                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
-                * 1_000_000.0) as u32
-        }
-        sub_text => sub_text
-            .replace(',', "")
-            .parse::<u32>()
-            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text)),
-    }
-}
-
-fn parse_daily_schedule_genre(card: &ElementRef) -> String {
-    let genre_selector = Selector::parse("p.genre").unwrap();
-
-    let mut result = String::new();
-
-    for genre in card.select(&genre_selector) {
-        result = genre.text().collect::<Vec<_>>()[0].to_string()
-    }
-
-    result
-}
-
-fn parse_daily_schedule_author(card: &ElementRef) -> String {
-    let author_selector = Selector::parse("p.author").unwrap();
-
-    let mut result = String::new();
-
-    for author in card.select(&author_selector) {
-        result = author.text().collect::<Vec<_>>()[0].to_string()
-    }
-
-   result
-}
-
-fn parse_daily_schedule_title(card: &ElementRef) -> String {
-    let title_selector = Selector::parse("p.subj").unwrap();
-
-    let mut result = String::new();
-
-    for title in card.select(&title_selector) {
-        result = title.text().collect::<Vec<_>>()[0].to_string()
-    }
-
-    result
-}
-
 #[cfg(test)]
-mod line_parsing_tests {
+mod series_info_parsing_tests {
     use super::*;
 
     #[test]
@@ -468,11 +248,11 @@ mod line_parsing_tests {
             <span class="ico_grade5">grade</span>
             <em class="cnt" id="_starScoreAverage">9.86</em>
             <a href="#" id="_rateButton" class="btn_rate2 NPI=a:rate,g:en_en" onclick="return false;">RATE</a>
-            
+
             <div class="ly_grade">
 
                 <strong id="_starScoreCount" class="grade_cnt">10<span class="blind">point</span></strong>
-                
+
                 <span class="star_area NPI=a:ratesel,g:en_en">
                     <a href="#" title="0">Selected points</a>
                     <a href="#" title="1" onclick="return false;" class="on _star">1 points</a>
@@ -524,7 +304,7 @@ mod line_parsing_tests {
             <span class="ico_grade5">grade</span>
             <em class="cnt" id="_starScoreAverage">9.86</em>
             <a href="#" id="_rateButton" class="btn_rate2 NPI=a:rate,g:en_en" onclick="return false;">RATE</a>
-            
+
             <div class="ly_grade">
 
                 <strong id="_starScoreCount" class="grade_cnt">10<span class="blind">point</span></strong>
@@ -559,7 +339,7 @@ mod line_parsing_tests {
         <span class="ico_grade5">grade</span>
         <em class="cnt" id="_starScoreAverage">9.86</em>
         <a href="#" id="_rateButton" class="btn_rate2 NPI=a:rate,g:en_en" onclick="return false;">RATE</a>
-        
+
         <div class="ly_grade">
 
             <strong id="_starScoreCount" class="grade_cnt">10<span class="blind">point</span></strong>
@@ -603,11 +383,11 @@ mod line_parsing_tests {
             <span class="ico_grade5">grade</span>
             <em class="cnt" id="_starScoreAverage">9.86</em>
             <a href="#" id="_rateButton" class="btn_rate2 NPI=a:rate,g:en_en" onclick="return false;">RATE</a>
-            
+
             <div class="ly_grade">
 
                 <strong id="_starScoreCount" class="grade_cnt">10<span class="blind">point</span></strong>
-                
+
                 <span class="star_area NPI=a:ratesel,g:en_en">
                     <a href="#" title="0">Selected points</a>
                     <a href="#" title="1" onclick="return false;" class="on _star">1 points</a>
@@ -678,7 +458,7 @@ mod line_parsing_tests {
 
     #[test]
     fn should_parse_author_name() {
-        const AUTHOR: &str = r##"<div class="author_area">				
+        const AUTHOR: &str = r##"<div class="author_area">
         <a href="https://www.webtoons.com/en/creator/instantmiso" class="author NPI=a:creator,g:en_en _gaLoggingLink">instantmiso</a>
 <button type="button" class="ico_info2 _btnAuthorInfo">author info</button>
 </div>"##;
@@ -715,98 +495,7 @@ mod line_parsing_tests {
         assert_eq!(author_2, "PASA , TARU ...")
     }
 
-    #[test]
-    fn should_parse_chapter_number() {
-        const NUMBER: &str = r#"<li class="_episodeItem" id="episode_24" data-episode-no="24">
-						
-        <a href="https://www.webtoons.com/en/supernatural/to-tame-a-fire/episode-24/viewer?title_no=3763&amp;episode_no=24" class="NPI=a:list,i=3763,r=24,g:en_en">
-            <span class="thmb">
-                <img src="https://webtoon-phinf.pstatic.net/20221031_121/1667151253417biSNa_PNG/thumb_16671512222071190_Layer_4.png?type=q90" width="77" height="73" alt="Episode 24">
-            </span>
-            <span class="subj"><span>Episode 24</span></span>
-            <span class="manage_blank"></span>
-            <span class="date">Nov 20, 2022</span>
-            
-            
-            <span class="like_area _likeitArea"><em class="ico_like _btnLike _likeMark">like</em>7,779</span>
-            <span class="tx">#24</span>
-        </a>
-    </li>"#;
 
-        let html = Html::parse_document(NUMBER);
-
-        let chapter_selector = Selector::parse("li").unwrap();
-
-        let mut result = 0;
-
-        for chapter in html.select(&chapter_selector) {
-            result = parse_chapter_number(&chapter);
-        }
-
-        assert_eq!(result, 24);
-    }
-
-    #[test]
-    fn should_parse_chapter_likes() {
-        const LIKES: &str = r#"<li class="_episodeItem" id="episode_24" data-episode-no="24">
-						
-        <a href="https://www.webtoons.com/en/supernatural/to-tame-a-fire/episode-24/viewer?title_no=3763&amp;episode_no=24" class="NPI=a:list,i=3763,r=24,g:en_en">
-            <span class="thmb">
-                <img src="https://webtoon-phinf.pstatic.net/20221031_121/1667151253417biSNa_PNG/thumb_16671512222071190_Layer_4.png?type=q90" width="77" height="73" alt="Episode 24">
-            </span>
-            <span class="subj"><span>Episode 24</span></span>
-            <span class="manage_blank"></span>
-            <span class="date">Nov 20, 2022</span>
-            
-            
-            <span class="like_area _likeitArea"><em class="ico_like _btnLike _likeMark">like</em>7,779</span>
-            <span class="tx">#24</span>
-        </a>
-    </li>"#;
-
-        let html = Html::parse_document(LIKES);
-
-        let chapter_selector = Selector::parse("li").unwrap();
-
-        let mut result = 0;
-
-        for chapter in html.select(&chapter_selector) {
-            result = parse_chapter_like_amount(&chapter);
-        }
-
-        assert_eq!(result, 7_779);
-    }
-
-    #[test]
-    fn should_parse_chapter_date() {
-        const DATE: &str = r#"<li class="_episodeItem" id="episode_24" data-episode-no="24">
-						
-        <a href="https://www.webtoons.com/en/supernatural/to-tame-a-fire/episode-24/viewer?title_no=3763&amp;episode_no=24" class="NPI=a:list,i=3763,r=24,g:en_en">
-            <span class="thmb">
-                <img src="https://webtoon-phinf.pstatic.net/20221031_121/1667151253417biSNa_PNG/thumb_16671512222071190_Layer_4.png?type=q90" width="77" height="73" alt="Episode 24">
-            </span>
-            <span class="subj"><span>Episode 24</span></span>
-            <span class="manage_blank"></span>
-            <span class="date">Nov 20, 2022</span>
-            
-            
-            <span class="like_area _likeitArea"><em class="ico_like _btnLike _likeMark">like</em>7,779</span>
-            <span class="tx">#24</span>
-        </a>
-    </li>"#;
-
-        let html = Html::parse_document(DATE);
-
-        let chapter_selector = Selector::parse("li").unwrap();
-
-        let mut result = String::new();
-
-        for chapter in html.select(&chapter_selector) {
-            result = parse_chapter_date(&chapter);
-        }
-
-        assert_eq!(result, "2022-11-20");
-    }
 
     #[test]
     fn should_parse_series_title() {
@@ -821,6 +510,6 @@ mod line_parsing_tests {
 
         let result = parse_series_page_title(TITLE);
 
-        assert_eq!(result, "dark moon: the blood altar");
+        assert_eq!(result, "DARK MOON: THE BLOOD ALTAR");
     }
 }

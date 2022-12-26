@@ -1,18 +1,18 @@
 use chrono::Utc;
 use core::time;
-use reqwest::{blocking::Response, Error};
+use reqwest::{Response, Error};
 use std::{env, fs, thread};
 
 pub mod regex;
 pub struct ResponseFactory {}
 
 impl ResponseFactory {
-    pub fn get(url: &str) -> Result<Response, Error> {
+    pub async fn get(url: &str) -> Result<Response, Error> {
         let mut retries = 5;
         let mut wait = 1;
 
         let response: Response = loop {
-            match reqwest::blocking::get(url) {
+            match reqwest::get(url).await {
                 Err(_) => {
                     if retries > 0 {
                         retries -= 1;
