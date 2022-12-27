@@ -8,8 +8,8 @@ A tool for scraping information from [Webtoons](https://www.webtoons.com/). Curr
 
 The data gathered from here is organized like so:
 
-|title|author|genre|total_likes|status|
-|:---:|:----:|:---:|:---------:|:----:|
+|title|author|genre|total_likes|status| scrape_date|
+|:---:|:----:|:---:|:---------:|:----:|:----------:|
 
 The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad cast with a net, but if you want more accuracy then you would need to use the other part of the scraper and scrape the stories page.
 
@@ -17,8 +17,8 @@ The likes information, once it gets to the millions, is truncated, i.e. 1.1M. Th
 
 The data gathered from here is organized like so:
 
-|title|author|genre|total_likes|status|release_day|views|subscribers|rating|chapter_number|likes|date|
-|:---:|:----:|:---:|:---------:|:----:|:---------:|:---:|:---------:|:----:|:------------:|:---:|:--:|
+|title|author|genre|total_likes|status|release_day|views|subscribers|rating|chapter_number|likes|date| scrape_date|
+|:---:|:----:|:---:|:---------:|:----:|:---------:|:---:|:---------:|:----:|:------------:|:---:|:--:|:----------:|
 
 The `chapter_number`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
 
