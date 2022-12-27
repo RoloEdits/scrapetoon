@@ -64,7 +64,7 @@ For example:
 
 And secondly, it also requires a numerical value to be given for an `end`. This value correlates to the page numbers below the chapter list. The scraper goes from 1 to the entered value. If you want all pages to be gone through, then you just enter the highest, the last, page.
 
-<img src="imgs/omniscient_reader_page_numbers.png" style="display: block; margin-left: auto; margin-right: auto; width: 50%;: center">
+<img src="imgs/omniscient_reader_page_numbers.png">
 
 In this case, if I want all pages, I enter 13
 
@@ -90,8 +90,21 @@ Once you have what you need entered in, press the `ENTER` key and it will begin 
 
 The output files will either be `daily_schedule.csv` if you configured for `daily`, or `<STORY NAME>.csv` if you configured for `story`. In this examples case: `omniscient reader.csv`.
 
+# Series Specific Scraping
+
+As only so much data can be gotten so that it can work for all the stories on Webtoon, there is a lot that can be lost. And in an effort to keep the more generic project as simple to use as possible, some extra capabilities are also missing.
+
+That's where story specific projects come in. These projects are there to get extra data otherwise not provided by the more generic scraping already provided. Like season number, season chapter, as well as comment data, such as amount a chapter has as well as the actual comments themselves. Being able to tailor what you get that's unique to a story could allow for a more fined grained experience.
+
+I myself will provided an example project as part of the documentation, that being the tower-of-god project folder. And I will use that to document all the steps necessary to adapt what was done if you would want to make a project on your own.
+
+In light of the more focused and slightly more technical requirements comes with it a runtime dependency. [ChromeDriver](https://chromedriver.chromium.org/downloads). To know which one to download you can just open up chrome and check the version you have. Download the matching major release version. 107, 108, 109, etc.
+
+
+
+
 # License
 
-Any CSV's hosted here are under a Creative Commons Zero v1.0 Universal License.
+All CSV's hosted here are under a Creative Commons Zero v1.0 Universal License.
 
-The software is under an MIT License.
+All software is under an MIT License.
