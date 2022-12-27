@@ -1,13 +1,17 @@
-use core::time;
-use std::{collections::LinkedList, thread};
 use chrono::NaiveDate;
 use cli_core::ProgressBarFactory;
+use core::time;
 use project_core::ResponseFactory;
-use scraper::{Html, Selector, ElementRef};
+use scraper::{ElementRef, Html, Selector};
+use std::{collections::LinkedList, thread};
 
 use crate::ChapterInfo;
 
-pub async fn parse_chapter_list_pages(end: u16, input_url: &str, chapter_info: &mut LinkedList<ChapterInfo>) {
+pub async fn parse_chapter_list_pages(
+    end: u16,
+    input_url: &str,
+    chapter_info: &mut LinkedList<ChapterInfo>,
+) {
     let bar = ProgressBarFactory::get_bar(end);
 
     for page in 1..=end {

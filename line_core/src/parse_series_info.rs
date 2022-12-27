@@ -1,7 +1,7 @@
 use core::time;
+use project_core::ResponseFactory;
 use scraper::{ElementRef, Html, Selector};
 use std::thread;
-use project_core::ResponseFactory;
 
 use crate::parse_chapter_list::parse_chapter_list_pages;
 
@@ -12,7 +12,8 @@ pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
 
     let mut chapter_info_list = LinkedList::new();
 
-    let (title, author, status, release_day, views, subscribers, rating) = parse_series_page_info(input_url).await;
+    let (title, author, status, release_day, views, subscribers, rating) =
+        parse_series_page_info(input_url).await;
 
     parse_chapter_list_pages(end, input_url, &mut chapter_info_list).await;
 
@@ -494,8 +495,6 @@ mod series_info_parsing_tests {
         assert_eq!(author_1, "HYBE".to_string());
         assert_eq!(author_2, "PASA , TARU ...")
     }
-
-
 
     #[test]
     fn should_parse_series_title() {

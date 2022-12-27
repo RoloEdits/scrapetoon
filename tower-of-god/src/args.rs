@@ -18,5 +18,4 @@ pub struct CliArgs {
     /// The output path to save the output csv file.
     #[arg(short, long)]
     pub output: String,
-
 }

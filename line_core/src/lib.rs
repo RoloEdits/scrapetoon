@@ -1,7 +1,7 @@
-pub mod parse_series_info;
-pub mod parse_daily_schedule;
 pub mod parse_chapter_list;
 pub mod parse_comments;
+pub mod parse_daily_schedule;
+pub mod parse_series_info;
 
 use project_core::regex;
 use std::collections::LinkedList;
@@ -55,7 +55,14 @@ pub struct UserComment {
 }
 
 impl UserComment {
-    pub fn new( user: String, body: String, post_date: String, upvotes: u32, downvotes: u32, reply_count: u16) -> Self {
+    pub fn new(
+        user: String,
+        body: String,
+        post_date: String,
+        upvotes: u32,
+        downvotes: u32,
+        reply_count: u16,
+    ) -> Self {
         Self {
             user,
             body,

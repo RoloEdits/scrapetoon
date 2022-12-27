@@ -1,6 +1,6 @@
 use hashlink::LinkedHashSet;
 use project_core::ResponseFactory;
-use scraper::{Html, Selector, ElementRef};
+use scraper::{ElementRef, Html, Selector};
 
 use crate::DailyScheduleInfo;
 
@@ -76,7 +76,7 @@ fn parse_daily_schedule_total_likes(card: &ElementRef) -> u32 {
                 .replace('M', "")
                 .parse::<f32>()
                 .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
-             * 1_000_000.0) as u32
+                * 1_000_000.0) as u32
         }
         sub_text => sub_text
             .replace(',', "")
@@ -123,6 +123,5 @@ fn parse_daily_schedule_title(card: &ElementRef) -> String {
 
 #[cfg(test)]
 mod daily_schedule_parsing_tests {
-//    use super::*;
-
+    //    use super::*;
 }

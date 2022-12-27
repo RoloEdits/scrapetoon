@@ -2,7 +2,6 @@ use project_core::regex;
 use scraper::{Html, Selector};
 
 pub fn parse_season_number(html: &Html) -> u8 {
-
     let season_selector = Selector::parse("h1.subj_episode").unwrap();
 
     let mut result: u8 = 0;
@@ -14,30 +13,31 @@ pub fn parse_season_number(html: &Html) -> u8 {
 
         let season_number = regex.captures(number).unwrap()[0].to_string();
 
-        result = season_number.chars().nth(0).unwrap().to_digit(10).expect(&format!("Error parsing: [{}]", number)) as u8;
+        result = season_number
+            .chars()
+            .next()
+            .unwrap()
+            .to_digit(10)
+            .unwrap_or_else(|| panic!("Error parsing: [{}]", number)) as u8;
     }
 
     result
 }
 
 pub fn parse_season_chapter_number(html: &Html) -> u16 {
-
     let season_chapter_number_selector = Selector::parse("h1.subj_episode").unwrap();
 
-    let mut result: u16 = 0;
+    let chapter_number = html
+        .select(&season_chapter_number_selector)
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<_>>()[0];
 
-    for element in html.select(&season_chapter_number_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
-
-        result = match chapter_number[15..].parse::<u16>() {
-            Ok(number) => number,
-            // solves Ep. 1 - Headons floor where others are all Ep. 2, Ep.3, etc
-            Err(_) => 1,
-        };
-        break;
-    }
-
-    result
+    chapter_number[15..]
+        .parse::<u16>()
+        // solves Ep. 1 - Headons floor where others are all Ep. 2, Ep.3, etc
+        .unwrap_or(1)
 }
 
 #[cfg(test)]
@@ -85,14 +85,4 @@ mod tests {
         assert_eq!(result1, 133);
         assert_eq!(result2, 1);
     }
-
-//    #[test]
-//    fn should_parse_chapter_date() {
-//        const DATE: &str = r#"<span class="date">Jul 17, 2022</span>"#;
-//        let html = Html::parse_document(DATE);
-//
-//        let result = parse_date(&html);
-//
-//        assert_eq!(result, "");
-//    }
 }

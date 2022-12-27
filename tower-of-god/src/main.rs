@@ -1,12 +1,11 @@
 use args::CliArgs;
 use clap::*;
 
-mod csv;
 mod args;
+mod csv;
 
 #[tokio::main]
 async fn main() {
-
     let args = CliArgs::parse();
 
     let path = args.output;

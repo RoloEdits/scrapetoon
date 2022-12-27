@@ -7,7 +7,21 @@ pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
     writer
-        .write_record(["season", "season_chapter", "chapter", "comments", "likes", "date", "user", "comment_body", "post_date", "upvotes", "downvotes", "reply_count", "scrape_date"])
+        .write_record([
+            "season",
+            "season_chapter",
+            "chapter",
+            "comments",
+            "likes",
+            "date",
+            "user",
+            "comment_body",
+            "post_date",
+            "upvotes",
+            "downvotes",
+            "reply_count",
+            "scrape_date",
+        ])
         .expect("Couldn't write to file.");
 
     for chapter in tog_chapter_info {
@@ -21,7 +35,6 @@ pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
         let current_utc_date = project_core::get_current_utc_date();
 
         for comment in &chapter.comments {
-
             let user = comment.user.to_owned();
             let comment_body = comment.body.to_owned();
             let post_date = comment.post_date.to_owned();
@@ -30,7 +43,21 @@ pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
             let reply_count = comment.reply_count.to_string();
 
             writer
-                .write_record(&[&season, &season_chapter, &chapter_number, &comments, &likes, &date, &user, &comment_body, &post_date, &upvotes, &downsvotes, &reply_count, &current_utc_date])
+                .write_record([
+                    &season,
+                    &season_chapter,
+                    &chapter_number,
+                    &comments,
+                    &likes,
+                    &date,
+                    &user,
+                    &comment_body,
+                    &post_date,
+                    &upvotes,
+                    &downsvotes,
+                    &reply_count,
+                    &current_utc_date,
+                ])
                 .expect("Couldn't write to file.");
         }
     }

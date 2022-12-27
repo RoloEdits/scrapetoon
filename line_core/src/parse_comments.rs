@@ -8,31 +8,27 @@ use crate::UserComment;
 pub fn parse_chapter_number(html: &Html) -> u16 {
     let chapter_number_selector = Selector::parse("span.tx").unwrap();
 
-    let mut result: u16 = 0;
+    let chapter_number = html
+        .select(&chapter_number_selector)
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<_>>()[0];
 
-    for element in html.select(&chapter_number_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
-
-        result = chapter_number.replace("#", "").parse::<u16>().unwrap();
-        break;
-    }
-
-    result
+    chapter_number.replace('#', "").parse::<u16>().unwrap()
 }
 
 pub fn parse_comment_count(html: &Html) -> u32 {
     let comment_amount_selector = Selector::parse(r#"span[class="u_cbox_count"]"#).unwrap();
 
-    let mut result: u32 = 0;
+    let chapter_number = html
+        .select(&comment_amount_selector)
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<_>>()[0];
 
-    for element in html.select(&comment_amount_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
-
-        result = chapter_number.replace(",", "").parse::<u32>().unwrap();
-        break;
-    }
-
-    result
+    chapter_number.replace(',', "").parse::<u32>().unwrap()
 }
 
 pub fn parse_user_comments(html: &Html) -> LinkedList<UserComment> {
@@ -83,19 +79,22 @@ fn parse_user(user_comment: ElementRef, user_selector: &Selector) -> String {
     comment_text
 }
 
-fn parse_comment_post_date(user_comment: ElementRef, comment_date_selector: &Selector ) -> String {
+fn parse_comment_post_date(user_comment: ElementRef, comment_date_selector: &Selector) -> String {
     let comment_date = match user_comment.select(comment_date_selector).next() {
         Some(date) => date,
         None => return String::new(),
     }
     .text()
     .collect::<Vec<_>>()[0];
-    let datetime = NaiveDate::parse_from_str(&comment_date, "%b %e, %Y").unwrap();
+    let datetime = NaiveDate::parse_from_str(comment_date, "%b %e, %Y").unwrap();
     let formated_date = datetime.format("%b %d, %Y").to_string();
     formated_date
 }
 
-pub fn parse_comment_reply_count(user_comment: ElementRef, comment_reply_count_selector: &Selector) -> u16 {
+pub fn parse_comment_reply_count(
+    user_comment: ElementRef,
+    comment_reply_count_selector: &Selector,
+) -> u16 {
     let comment_reply_count = match user_comment.select(comment_reply_count_selector).next() {
         Some(element) => element,
         // When there are no replies.
@@ -108,7 +107,10 @@ pub fn parse_comment_reply_count(user_comment: ElementRef, comment_reply_count_s
     comment_reply_count
 }
 
-pub fn parse_comment_downvote(user_comment: ElementRef, comment_downvote_selector: &Selector) -> u32 {
+pub fn parse_comment_downvote(
+    user_comment: ElementRef,
+    comment_downvote_selector: &Selector,
+) -> u32 {
     let comment_downvote = match user_comment.select(comment_downvote_selector).next() {
         Some(upvote) => upvote,
         None => return 0,
@@ -345,17 +347,12 @@ mod parse_comments_tests {
 
         assert_eq!(result.len(), 2);
 
-        for check in result {
-            assert_eq!(
-                check.body,
-                "Hey Guys, this is the beginning of a legend."
-            );
-            assert_eq!(check.upvotes, 63_591);
-            assert_eq!(check.downvotes, 295);
-            assert_eq!(check.reply_count, 114);
-            assert_eq!(check.post_date, "Nov 06, 2014");
+        let check = result.into_iter().next().unwrap();
 
-            break;
-        }
+        assert_eq!(check.body, "Hey Guys, this is the beginning of a legend.");
+        assert_eq!(check.upvotes, 63_591);
+        assert_eq!(check.downvotes, 295);
+        assert_eq!(check.reply_count, 114);
+        assert_eq!(check.post_date, "Nov 06, 2014");
     }
 }

@@ -1,6 +1,6 @@
 use chrono::Utc;
 use core::time;
-use reqwest::{Response, Error};
+use reqwest::{Error, Response};
 use std::{env, fs, thread};
 
 pub mod regex;
