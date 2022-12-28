@@ -56,3 +56,10 @@ pub fn create_date_folder(filepath: &str) -> String {
 pub fn get_current_utc_date() -> String {
     Utc::now().date_naive().to_string()
 }
+
+pub struct SeriesConfiguration<'a> {
+    pub filename: &'a str,
+    pub page_url: &'a str,
+    pub episode_url: &'a str,
+    pub episode_url_offset: u16,
+}

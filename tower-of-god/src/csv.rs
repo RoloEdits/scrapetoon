@@ -1,15 +1,18 @@
 use std::collections::LinkedList;
 
-use tower_of_god::TowerOfGodChapterInfo;
+use tower_of_god::ChapterInfo;
 
-pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
-    let final_path = format!("{}{}", path, "tower-of-god.csv");
+pub fn write(path: &str, chapter_info: &LinkedList<ChapterInfo>, filename: &str) {
+    let final_path = format!("{}{}.csv", path, filename);
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
     writer
+    // The resulting data columns. Tweak as needed.
         .write_record([
+            // Might need to delete
             "season",
             "season_chapter",
+            // Works for all stories
             "chapter",
             "comments",
             "likes",
@@ -24,9 +27,13 @@ pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
         ])
         .expect("Couldn't write to file.");
 
-    for chapter in tog_chapter_info {
+    for chapter in chapter_info {
+
+        // Might need to change or delete these depending on the story
         let season = chapter.season.to_string();
         let season_chapter = chapter.season_chapter.to_string();
+
+        // These functions work over all stories
         let chapter_number = chapter.chapter_number.to_string();
         let comments = chapter.comment_count.to_string();
         let likes = chapter.likes.to_string();
@@ -43,6 +50,7 @@ pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
             let reply_count = comment.reply_count.to_string();
 
             writer
+            // These just need to match the previously given columns.
                 .write_record([
                     &season,
                     &season_chapter,
@@ -55,8 +63,8 @@ pub fn write(path: &str, tog_chapter_info: &LinkedList<TowerOfGodChapterInfo>) {
                     &post_date,
                     &upvotes,
                     &downsvotes,
-                    &reply_count,
                     &current_utc_date,
+                    &reply_count,
                 ])
                 .expect("Couldn't write to file.");
         }

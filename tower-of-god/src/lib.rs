@@ -1,6 +1,7 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{parse_chapter_list, parse_comments, ChapterInfo, UserComment};
+use line_core::{parse_chapter_list, parse_comments, ChapterListInfo, UserComment};
+use project_core::SeriesConfiguration;
 use scraper::Html;
 use std::{
     collections::{HashMap, LinkedList},
@@ -10,9 +11,12 @@ use thirtyfour::prelude::*;
 
 mod parse;
 
-pub struct TowerOfGodChapterInfo {
+/// Need to change data accordingly.
+pub struct ChapterInfo {
+    // Might need to remove or tweak.
     pub season: u8,
     pub season_chapter: u16,
+    // Everything below will work for all stories.
     pub chapter_number: u16,
     pub comment_count: u32,
     pub likes: u32,
@@ -20,27 +24,43 @@ pub struct TowerOfGodChapterInfo {
     pub comments: LinkedList<UserComment>,
 }
 
-pub async fn parse_chapters(start: u16, end: u16, pages: u16) -> LinkedList<TowerOfGodChapterInfo> {
-    let chapter_likes_date_map = get_likes_date_hashmap(pages).await;
+struct LikesDate {
+    likes: u32,
+    date: String,
+}
+
+impl LikesDate {
+    fn new(likes: u32, date: String) -> Self {
+        Self { likes, date }
+    }
+}
+
+pub async fn parse_chapters(
+    start: u16,
+    end: u16,
+    pages: u16,
+    config: &SeriesConfiguration<'_>,
+    need_to_skip: fn(u16) -> bool,
+) -> LinkedList<ChapterInfo> {
+    let chapter_likes_date_map = get_likes_date_hashmap(pages, config.page_url).await;
 
     let capabilities = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", capabilities)
         .await
         .unwrap();
 
-    let mut result: LinkedList<TowerOfGodChapterInfo> = LinkedList::new();
+    let mut result: LinkedList<ChapterInfo> = LinkedList::new();
 
     let bar = ProgressBarFactory::get_bar(end + 1 - start);
 
     println!("Parsing Chapters..");
 
-    for chapter in start..=end + 1 {
-        // The URl no=221 for chapter 221 is a 404. No=222 is where #221 is.
-        if chapter == 221 {
+    for chapter in start..=end + config.episode_url_offset {
+        if need_to_skip(chapter) {
             continue;
         }
 
-        let url = format!("https://www.webtoons.com/en/fantasy/tower-of-god/season-1-ep-0/viewer?title_no=95&episode_no={}", chapter);
+        let url = format!("{}{}", config.episode_url, chapter);
 
         // Exponential back-off
         let mut retries = 5;
@@ -53,6 +73,7 @@ pub async fn parse_chapters(start: u16, end: u16, pages: u16) -> LinkedList<Towe
                         thread::sleep(time::Duration::from_secs(wait));
                         wait *= 2;
                     } else {
+                        // If fails to connect it will return any already scraping
                         eprintln!("Error connecting to webpage, saving progress and exiting...");
                         return result;
                     }
@@ -77,9 +98,12 @@ pub async fn parse_chapters(start: u16, end: u16, pages: u16) -> LinkedList<Towe
             .to_owned();
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
 
-        result.push_back(TowerOfGodChapterInfo {
+        result.push_back(ChapterInfo {
+
+            // Add story specific data here.
             season: parse::parse_season_number(&html),
             season_chapter: parse::parse_season_chapter_number(&html),
+            // Below works for all stories
             chapter_number,
             comment_count: parse_comments::parse_comment_count(&html),
             date,
@@ -91,24 +115,11 @@ pub async fn parse_chapters(start: u16, end: u16, pages: u16) -> LinkedList<Towe
     result
 }
 
-struct LikesDate {
-    likes: u32,
-    date: String,
-}
+async fn get_likes_date_hashmap(pages: u16, url: &str) -> HashMap<u16, LikesDate> {
 
-impl LikesDate {
-    fn new(likes: u32, date: String) -> Self {
-        Self { likes, date }
-    }
-}
-
-async fn get_likes_date_hashmap(pages: u16) -> HashMap<u16, LikesDate> {
-    const CHAPTER_LIST_URL: &str =
-        r"https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95";
-    let mut chapter_info_list: LinkedList<ChapterInfo> = LinkedList::new();
+    let mut chapter_info_list: LinkedList<ChapterListInfo> = LinkedList::new();
     println!("Pre-Fetching Necessary Data");
-    parse_chapter_list::parse_chapter_list_pages(pages, CHAPTER_LIST_URL, &mut chapter_info_list)
-        .await;
+    parse_chapter_list::parse_chapter_list_pages(pages, url, &mut chapter_info_list).await;
     println!("Completed Pre-Fetch");
 
     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
