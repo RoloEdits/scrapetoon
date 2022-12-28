@@ -1,43 +1,61 @@
 use project_core::regex;
 use scraper::{Html, Selector};
 
+// Story specific parsing implimentations go here.
+
 pub fn parse_season_number(html: &Html) -> u8 {
-    let season_selector = Selector::parse("h1.subj_episode").unwrap();
+    // input eg. '[Season 3] Ep. 133'
 
-    let mut result: u8 = 0;
+    let title_selector = Selector::parse("h1.subj_episode").unwrap();
+    // Season (3) where 3 is captured as 'season'
+    let regex = regex![r"Season\s(\d)"];
 
-    let regex = regex![r"\d]"];
-
-    for element in html.select(&season_selector) {
-        let number = element.text().collect::<Vec<_>>()[0];
-
-        let season_number = regex.captures(number).unwrap()[0].to_string();
-
-        result = season_number
-            .chars()
-            .next()
-            .unwrap()
-            .to_digit(10)
-            .unwrap_or_else(|| panic!("Error parsing: [{}]", number)) as u8;
-    }
-
-    result
-}
-
-pub fn parse_season_chapter_number(html: &Html) -> u16 {
-    let season_chapter_number_selector = Selector::parse("h1.subj_episode").unwrap();
-
-    let chapter_number = html
-        .select(&season_chapter_number_selector)
+    let title = html
+        .select(&title_selector)
+        .into_iter()
         .next()
         .unwrap()
         .text()
         .collect::<Vec<_>>()[0];
 
-    chapter_number[15..]
+    let season = regex
+        .captures(title)
+        .unwrap()
+        .get(1)
+        .unwrap()
+        .as_str()
+        .parse::<u8>()
+        .unwrap();
+
+    season
+}
+
+pub fn parse_season_chapter_number(html: &Html) -> u16 {
+    // input eg. '[Season 3] Ep. 133'
+
+    let title_selector = Selector::parse("h1.subj_episode").unwrap();
+
+    // Ep. (133) where 133 is captured
+    let regex = regex![r"Ep.\s(\d+)"];
+
+    let title = html
+        .select(&title_selector)
+        .into_iter()
+        .next()
+        .unwrap()
+        .text()
+        .collect::<Vec<_>>()[0];
+
+    let season_chapter = regex
+        .captures(title)
+        .unwrap()
+        .get(1)
+        .unwrap()
+        .as_str()
         .parse::<u16>()
-        // solves Ep. 1 - Headons floor where others are all Ep. 2, Ep.3, etc
-        .unwrap_or(1)
+        .unwrap();
+
+    season_chapter
 }
 
 #[cfg(test)]

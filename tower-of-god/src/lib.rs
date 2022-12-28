@@ -9,7 +9,7 @@ use std::{
 };
 use thirtyfour::prelude::*;
 
-mod parse;
+mod story_specific_parsing;
 
 /// Need to change data accordingly.
 pub struct ChapterInfo {
@@ -101,8 +101,8 @@ pub async fn parse_chapters(
         result.push_back(ChapterInfo {
 
             // Add story specific data here.
-            season: parse::parse_season_number(&html),
-            season_chapter: parse::parse_season_chapter_number(&html),
+            season: story_specific_parsing::parse_season_number(&html),
+            season_chapter: story_specific_parsing::parse_season_chapter_number(&html),
             // Below works for all stories
             chapter_number,
             comment_count: parse_comments::parse_comment_count(&html),
