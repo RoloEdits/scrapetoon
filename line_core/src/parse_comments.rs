@@ -1,7 +1,6 @@
-use std::collections::LinkedList;
-
 use chrono::NaiveDate;
 use scraper::{ElementRef, Html, Selector};
+use std::collections::LinkedList;
 
 use crate::UserComment;
 
@@ -102,6 +101,8 @@ pub fn parse_comment_reply_count(
     }
     .text()
     .collect::<Vec<_>>()[0]
+        // Once replies get past 999, a '+' is added. Need to remove to parse.
+        .replace('+', "")
         .parse::<u16>()
         .unwrap();
     comment_reply_count
