@@ -9,7 +9,7 @@ mod csv;
 async fn main() {
     let args = CliArgs::parse();
 
-    let parsed_chapters = tower_of_god::parse_chapters(
+    let (series_info, parsed_chapters) = tower_of_god::parse_chapters(
         args.start,
         args.end,
         args.pages,
@@ -18,5 +18,5 @@ async fn main() {
     )
     .await;
 
-    csv::write(&args.output, &parsed_chapters, config::CONFIG.filename);
+    csv::write(&args.output, &parsed_chapters, &series_info, config::CONFIG.filename);
 }

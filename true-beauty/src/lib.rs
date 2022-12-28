@@ -1,6 +1,6 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{parse_chapter_list, parse_comments, ChapterListInfo};
+use line_core::{ parse_comments, parse_series_info, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
 use std::{
@@ -12,21 +12,19 @@ use thirtyfour::prelude::*;
 pub mod config;
 use config::ChapterInfo;
 
-mod story_specific_parsing;
-
 pub async fn parse_chapters(
     start: u16,
     end: u16,
     pages: u16,
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
-) -> LinkedList<ChapterInfo> {
-    let chapter_likes_date_map = get_likes_date_hashmap(pages, config.page_url).await;
+) -> ( SeriesInfo, LinkedList<ChapterInfo>) {
+    let (series_info, chapter_likes_date_map) = get_series_info(pages, config.page_url).await;
 
     let capabilities = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", capabilities)
         .await
-        .unwrap();
+        .expect("ChromeDriver not running.");
 
     let mut result: LinkedList<ChapterInfo> = LinkedList::new();
 
@@ -41,7 +39,6 @@ pub async fn parse_chapters(
 
         let url = format!("{}{}", config.episode_url, chapter);
 
-        // Exponential back-off
         let mut retries = 5;
         let mut wait = 1;
         loop {
@@ -52,24 +49,20 @@ pub async fn parse_chapters(
                         thread::sleep(time::Duration::from_secs(wait));
                         wait *= 2;
                     } else {
-                        // If fails to connect it will return any already scraping
                         eprintln!("Error connecting to webpage, saving progress and exiting...");
-                        return result;
+                        return (series_info, result);
                     }
                 }
                 Ok(ok) => break ok,
             };
         }
 
-        // Needs a delay to wait for everything to load on the page. Go no lower than 3 seconds. Recommened 5.
-        // If you notice inconsistent behavior, can increase to see if that solves it.
         thread::sleep(time::Duration::from_secs(5));
 
         bar.inc(1);
 
         let html = Html::parse_document(&driver.source().await.unwrap());
 
-        // Works for all stories
         let chapter_number = parse_comments::parse_chapter_number(&html);
         let comment_count = parse_comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
@@ -83,15 +76,15 @@ pub async fn parse_chapters(
         result.push_back({
             ChapterInfo {
                 chapter_number,
-                comment_count,
+                comments: comment_count,
                 likes,
                 date,
-                comments,
+                user_comments: comments,
             }
         });
     }
 
-    result
+    (series_info, result)
 }
 
 struct LikesDate {
@@ -105,23 +98,22 @@ impl LikesDate {
     }
 }
 
-async fn get_likes_date_hashmap(pages: u16, url: &str) -> HashMap<u16, LikesDate> {
-    let mut chapter_info_list: LinkedList<ChapterListInfo> = LinkedList::new();
+async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
     println!("Pre-Fetching Necessary Data");
-    parse_chapter_list::parse_chapter_list_pages(pages, url, &mut chapter_info_list).await;
+    let series_info = parse_series_info::series_info(pages, url).await;
     println!("Completed Pre-Fetch");
 
     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
 
-    for chapter in chapter_info_list {
+    for chapter in &series_info.chapter_list_info {
         match likes_date_hashmap.insert(
             chapter.chapter_number,
-            LikesDate::new(chapter.likes, chapter.date),
+            LikesDate::new(chapter.likes, chapter.date.to_owned()),
         ) {
             None => continue,
             Some(_) => continue,
         };
     }
 
-    likes_date_hashmap
+    (series_info, likes_date_hashmap)
 }

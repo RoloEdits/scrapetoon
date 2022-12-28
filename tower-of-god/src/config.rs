@@ -10,10 +10,26 @@ pub struct ChapterInfo {
     pub season_chapter: u16,
     // Everything below will work for all stories.
     pub chapter_number: u16,
-    pub comment_count: u32,
+    pub comments: u32,
     pub likes: u32,
     pub date: String,
-    pub comments: LinkedList<UserComment>,
+    pub user_comments: LinkedList<UserComment>,
+    
+}
+
+pub trait CommentSum {
+    fn sum_total_comments(&self) -> u32;
+}
+
+impl CommentSum for LinkedList<ChapterInfo> {
+    fn sum_total_comments(&self) -> u32 {
+        let mut accumulator = 0;
+        for chapter in self {
+            accumulator += chapter.comments;
+        }
+
+        accumulator
+    }
 }
 
 pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
