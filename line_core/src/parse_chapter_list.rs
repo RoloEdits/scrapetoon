@@ -5,12 +5,12 @@ use project_core::ResponseFactory;
 use scraper::{ElementRef, Html, Selector};
 use std::{collections::LinkedList, thread};
 
-use crate::ChapterInfo;
+use crate::ChapterListInfo;
 
 pub async fn parse_chapter_list_pages(
     end: u16,
     input_url: &str,
-    chapter_info: &mut LinkedList<ChapterInfo>,
+    chapter_info: &mut LinkedList<ChapterListInfo>,
 ) {
     let bar = ProgressBarFactory::get_bar(end);
 
@@ -41,7 +41,7 @@ pub async fn parse_chapter_list_pages(
     }
 }
 
-fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<ChapterInfo>) {
+fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<ChapterListInfo>) {
     let html = Html::parse_document(html);
 
     let chapter_selector = Selector::parse("ul#_listUl>li").unwrap();
@@ -50,7 +50,7 @@ fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<Ch
         let chapter_number = parse_chapter_number(&chapter);
         let likes = parse_chapter_like_amount(&chapter);
         let date = parse_chapter_date(&chapter);
-        chapter_info.push_back(ChapterInfo {
+        chapter_info.push_back(ChapterListInfo {
             chapter_number,
             likes,
             date,

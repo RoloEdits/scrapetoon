@@ -7,7 +7,7 @@ use project_core::regex;
 use std::collections::LinkedList;
 
 #[derive(Debug)]
-pub struct ChapterInfo {
+pub struct ChapterListInfo {
     pub chapter_number: u16,
     pub likes: u32,
     pub date: String,
@@ -32,7 +32,7 @@ pub struct SeriesInfo {
     pub views: u64,
     pub subscribers: u32,
     pub rating: f32,
-    pub chapter_info_list: LinkedList<ChapterInfo>,
+    pub chapter_info_list: LinkedList<ChapterListInfo>,
 }
 
 impl SeriesInfo {
