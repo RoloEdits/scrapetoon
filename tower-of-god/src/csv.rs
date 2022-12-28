@@ -9,7 +9,7 @@ pub fn write(path: &str, chapter_info: &LinkedList<ChapterInfo>, filename: &str)
     writer
         // The resulting data columns. Tweak as needed.
         .write_record([
-            // Might need to delete
+            // Story specific
             "season",
             "season_chapter",
             // Works for all stories
