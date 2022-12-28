@@ -2025,6 +2025,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "true-beauty"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "cli_core",
+ "csv",
+ "line_core",
+ "project_core",
+ "regex",
+ "scraper",
+ "thirtyfour",
+ "tokio",
+]
+
+[[package]]
 name = "try-lock"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
