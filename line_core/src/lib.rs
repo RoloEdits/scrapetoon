@@ -32,13 +32,13 @@ pub struct SeriesInfo {
     pub views: u64,
     pub subscribers: u32,
     pub rating: f32,
-    pub chapter_info_list: LinkedList<ChapterListInfo>,
+    pub chapter_list_info: LinkedList<ChapterListInfo>,
 }
 
 impl SeriesInfo {
     pub fn sum_total_likes(&self) -> u32 {
         let mut accumulator = 0;
-        for chapter in self.chapter_info_list.iter() {
+        for chapter in self.chapter_list_info.iter() {
             accumulator += chapter.likes;
         }
 
@@ -73,3 +73,4 @@ impl UserComment {
         }
     }
 }
+

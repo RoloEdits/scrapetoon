@@ -62,7 +62,7 @@ pub fn write_series_info(path: &str, series_info: &SeriesInfo) {
         ])
         .expect("Couldn't write to file.");
 
-    for chapter in series_info.chapter_info_list.iter() {
+    for chapter in series_info.chapter_list_info.iter() {
         let title = series_info.title.to_string();
         let author = series_info.author.to_string();
         let genre = series_info.genre.to_string();
@@ -72,7 +72,7 @@ pub fn write_series_info(path: &str, series_info: &SeriesInfo) {
         let views = series_info.views.to_string();
         let subscribers = series_info.subscribers.to_string();
         let rating = series_info.rating.to_string();
-        let total_chapters = series_info.chapter_info_list.len().to_string();
+        let total_chapters = series_info.chapter_list_info.len().to_string();
 
         let chapter_number = chapter.chapter_number.to_string();
         let likes = chapter.likes.to_string();

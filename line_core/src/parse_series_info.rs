@@ -10,12 +10,12 @@ use super::*;
 pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
     let (genre, _id) = parse_url_info(input_url);
 
-    let mut chapter_info_list = LinkedList::new();
+    let mut chapter_list_info = LinkedList::new();
 
     let (title, author, status, release_day, views, subscribers, rating) =
         parse_series_page_info(input_url).await;
 
-    parse_chapter_list_pages(end, input_url, &mut chapter_info_list).await;
+    parse_chapter_list_pages(end, input_url, &mut chapter_list_info).await;
 
     SeriesInfo {
         title,
@@ -23,7 +23,7 @@ pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
         genre,
         status,
         release_day,
-        chapter_info_list,
+        chapter_list_info,
         views,
         subscribers,
         rating,
@@ -153,14 +153,14 @@ fn parse_series_page_views(html: &str) -> u64 {
         sub_text if sub_text.ends_with('M') => {
             (sub_text
                 .replace('M', "")
-                .parse::<f32>()
+                .parse::<f64>()
                 .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
                 * 1_000_000.0) as u64
         }
         sub_text if sub_text.ends_with('B') => {
             (sub_text
                 .replace('B', "")
-                .parse::<f32>()
+                .parse::<f64>()
                 .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
                 * 1_000_000_000.0) as u64
         }
@@ -430,13 +430,20 @@ mod series_info_parsing_tests {
     <em class="cnt">1.1M</em>
 </li>"#;
 
+const VIEWS_4: &str = r#"<li>
+    <span class="ico_view">view</span>
+    <em class="cnt">956.3M</em>
+</li>"#;
+
         let result_1 = parse_series_page_views(VIEWS_1);
         let result_2 = parse_series_page_views(VIEWS_2);
         let result_3 = parse_series_page_views(VIEWS_3);
+        let result_4 = parse_series_page_views(VIEWS_4);
 
         assert_eq!(result_1, 1_000_000_000);
         assert_eq!(result_2, 245_678);
         assert_eq!(result_3, 1_100_000);
+        assert_eq!(result_4, 956_300_000);
     }
 
     #[test]
