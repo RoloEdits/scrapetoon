@@ -7,7 +7,7 @@ pub fn write(path: &str, chapter_info: &LinkedList<ChapterInfo>, filename: &str)
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
     writer
-    // The resulting data columns. Tweak as needed.
+        // The resulting data columns. Tweak as needed.
         .write_record([
             // Might need to delete
             "season",
@@ -28,7 +28,6 @@ pub fn write(path: &str, chapter_info: &LinkedList<ChapterInfo>, filename: &str)
         .expect("Couldn't write to file.");
 
     for chapter in chapter_info {
-
         // Might need to change or delete these depending on the story
         let season = chapter.season.to_string();
         let season_chapter = chapter.season_chapter.to_string();
@@ -50,7 +49,7 @@ pub fn write(path: &str, chapter_info: &LinkedList<ChapterInfo>, filename: &str)
             let reply_count = comment.reply_count.to_string();
 
             writer
-            // These just need to match the previously given columns.
+                // These just need to match the previously given columns.
                 .write_record([
                     &season,
                     &season_chapter,

@@ -30,19 +30,18 @@ async fn main() {
     };
 
     // If there is any need to skip a number, this is where you put it.
-    let to_skip =  |chapter: u16| -> bool {
-
+    let to_skip = |chapter: u16| -> bool {
         // Add the url number that you need to skip here and return true.
         // For first test run this should always return false. There may not be a need to skip anything.
         match chapter {
             // The URl no=221 for chapter 221 is a 404. No=222 is where #221 is.
             221 => true,
-            _ => false
+            _ => false,
         }
     };
 
-    let parsed_chapters = tower_of_god::parse_chapters(args.start, args.end, args.pages, &CONFIG, to_skip).await;
+    let parsed_chapters =
+        tower_of_god::parse_chapters(args.start, args.end, args.pages, &CONFIG, to_skip).await;
 
     csv::write(&args.output, &parsed_chapters, CONFIG.filename);
 }
-

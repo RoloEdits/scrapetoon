@@ -11,7 +11,7 @@ use thirtyfour::prelude::*;
 
 mod story_specific_parsing;
 
-/// Need to change data accordingly.
+// Need to change data accordingly.
 pub struct ChapterInfo {
     // Might need to remove or tweak.
     pub season: u8,
@@ -22,17 +22,6 @@ pub struct ChapterInfo {
     pub likes: u32,
     pub date: String,
     pub comments: LinkedList<UserComment>,
-}
-
-struct LikesDate {
-    likes: u32,
-    date: String,
-}
-
-impl LikesDate {
-    fn new(likes: u32, date: String) -> Self {
-        Self { likes, date }
-    }
 }
 
 pub async fn parse_chapters(
@@ -99,7 +88,6 @@ pub async fn parse_chapters(
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
 
         result.push_back(ChapterInfo {
-
             // Add story specific data here.
             season: story_specific_parsing::parse_season_number(&html),
             season_chapter: story_specific_parsing::parse_season_chapter_number(&html),
@@ -115,8 +103,18 @@ pub async fn parse_chapters(
     result
 }
 
-async fn get_likes_date_hashmap(pages: u16, url: &str) -> HashMap<u16, LikesDate> {
+struct LikesDate {
+    likes: u32,
+    date: String,
+}
 
+impl LikesDate {
+    fn new(likes: u32, date: String) -> Self {
+        Self { likes, date }
+    }
+}
+
+async fn get_likes_date_hashmap(pages: u16, url: &str) -> HashMap<u16, LikesDate> {
     let mut chapter_info_list: LinkedList<ChapterListInfo> = LinkedList::new();
     println!("Pre-Fetching Necessary Data");
     parse_chapter_list::parse_chapter_list_pages(pages, url, &mut chapter_info_list).await;

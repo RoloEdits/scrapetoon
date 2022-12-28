@@ -8,6 +8,10 @@ pub fn parse_season_number(html: &Html) -> u8 {
 
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
     // Season (3) where 3 is captured as 'season'
+    // Season
+    // \s = whitespace
+    // /d = one digit
+    // () = captures this group so it can be accessed with ease later
     let regex = regex![r"Season\s(\d)"];
 
     let title = html
@@ -36,6 +40,10 @@ pub fn parse_season_chapter_number(html: &Html) -> u16 {
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
     // Ep. (133) where 133 is captured
+    // Ep.
+    // \s = whitespace
+    // /d+ = one or more digits
+    // () = captures this group so it can be accessed with ease later
     let regex = regex![r"Ep.\s(\d+)"];
 
     let title = html
