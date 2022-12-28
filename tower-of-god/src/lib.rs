@@ -1,6 +1,6 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{parse_chapter_list, parse_comments, ChapterListInfo, UserComment};
+use line_core::{parse_chapter_list, parse_comments, ChapterListInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
 use std::{
@@ -9,20 +9,10 @@ use std::{
 };
 use thirtyfour::prelude::*;
 
-mod story_specific_parsing;
+pub mod config;
+use config::ChapterInfo;
 
-// Need to change data accordingly.
-pub struct ChapterInfo {
-    // Might need to remove or tweak.
-    pub season: u8,
-    pub season_chapter: u16,
-    // Everything below will work for all stories.
-    pub chapter_number: u16,
-    pub comment_count: u32,
-    pub likes: u32,
-    pub date: String,
-    pub comments: LinkedList<UserComment>,
-}
+mod story_specific_parsing;
 
 pub async fn parse_chapters(
     start: u16,
@@ -79,24 +69,31 @@ pub async fn parse_chapters(
 
         let html = Html::parse_document(&driver.source().await.unwrap());
 
+        // Story specific
+        let season = story_specific_parsing::parse_season_number(&html);
+        let season_chapter = story_specific_parsing::parse_season_chapter_number(&html);
+
+        // Works for all stories
         let chapter_number = parse_comments::parse_chapter_number(&html);
+        let comment_count = parse_comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
             .get(&chapter_number)
             .unwrap()
             .date
             .to_owned();
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
-
-        result.push_back(ChapterInfo {
-            // Add story specific data here.
-            season: story_specific_parsing::parse_season_number(&html),
-            season_chapter: story_specific_parsing::parse_season_chapter_number(&html),
-            // Below works for all stories
-            chapter_number,
-            comment_count: parse_comments::parse_comment_count(&html),
-            date,
-            likes,
-            comments: parse_comments::parse_user_comments(&html),
+        let comments = parse_comments::parse_user_comments(&html);
+        
+        result.push_back({
+            ChapterInfo {
+                season,
+                season_chapter,
+                chapter_number,
+                comment_count,
+                likes,
+                date,
+                comments,
+            }
         });
     }
 

@@ -1,6 +1,6 @@
 use std::collections::LinkedList;
 
-use tower_of_god::ChapterInfo;
+use tower_of_god::config::ChapterInfo;
 
 pub fn write(path: &str, chapter_info: &LinkedList<ChapterInfo>, filename: &str) {
     let final_path = format!("{}{}.csv", path, filename);
