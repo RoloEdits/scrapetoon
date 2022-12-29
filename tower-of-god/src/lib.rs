@@ -99,6 +99,8 @@ pub async fn parse_chapters(
         });
     }
 
+    driver.quit().await.unwrap();
+
     (series_info, result)
 }
 

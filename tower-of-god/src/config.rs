@@ -55,6 +55,9 @@ pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
 type Skip = fn(u16) -> bool;
 
 // If there is any need to skip a number, this is where you put it.
+// As a rule of thumb, if you need to put an offset, there will be a the same number of skips as the offset.
+// The page response of a bad episode URL will be a 404
+// When running this will crash the program.
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
     // Add the url number that you need to skip here and return true.
     // For first test run this should always return false. There may not be a need to skip anything.
