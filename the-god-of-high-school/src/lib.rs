@@ -1,6 +1,7 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{ parse_comments, parse_series_info, SeriesInfo};
+use line_core::LikesDate;
+use line_core::{comments, series_info, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
 use std::{
@@ -18,7 +19,7 @@ pub async fn parse_chapters(
     pages: u16,
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
-) -> ( SeriesInfo, LinkedList<ChapterInfo>) {
+) -> (SeriesInfo, LinkedList<ChapterInfo>) {
     let (series_info, chapter_likes_date_map) = get_series_info(pages, config.page_url).await;
 
     let capabilities = DesiredCapabilities::chrome();
@@ -37,7 +38,7 @@ pub async fn parse_chapters(
             continue;
         }
 
-        let url = format!("{}{}", config.episode_url, chapter);
+        let url = format!("{}{chapter}", config.episode_url);
 
         let mut retries = 5;
         let mut wait = 1;
@@ -63,16 +64,16 @@ pub async fn parse_chapters(
 
         let html = Html::parse_document(&driver.source().await.unwrap());
 
-        let chapter_number = parse_comments::parse_chapter_number(&html);
-        let comment_count = parse_comments::parse_comment_count(&html);
+        let chapter_number = comments::parse_chapter_number(&html);
+        let comment_count = comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
             .get(&chapter_number)
             .unwrap()
             .date
-            .to_owned();
+            .clone();
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
-        let comments = parse_comments::parse_user_comments(&html);
-        
+        let comments = comments::parse_user_comments(&html);
+
         result.push_back({
             ChapterInfo {
                 chapter_number,
@@ -89,20 +90,9 @@ pub async fn parse_chapters(
     (series_info, result)
 }
 
-struct LikesDate {
-    likes: u32,
-    date: String,
-}
-
-impl LikesDate {
-    fn new(likes: u32, date: String) -> Self {
-        Self { likes, date }
-    }
-}
-
 async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
     println!("Pre-Fetching Necessary Data");
-    let series_info = parse_series_info::series_info(pages, url).await;
+    let series_info = series_info::parse(pages, url).await;
     println!("Completed Pre-Fetch");
 
     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
@@ -110,10 +100,9 @@ async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, Lik
     for chapter in &series_info.chapter_list_info {
         match likes_date_hashmap.insert(
             chapter.chapter_number,
-            LikesDate::new(chapter.likes, chapter.date.to_owned()),
+            LikesDate::new(chapter.likes, chapter.date.clone()),
         ) {
-            None => continue,
-            Some(_) => continue,
+            None | Some(_) => continue,
         };
     }
 

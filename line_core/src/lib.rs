@@ -1,7 +1,7 @@
-pub mod parse_chapter_list;
-pub mod parse_comments;
-pub mod parse_daily_schedule;
-pub mod parse_series_info;
+pub mod chapter_list;
+pub mod comments;
+pub mod daily_schedule;
+pub mod series_info;
 
 use project_core::regex;
 use std::collections::LinkedList;
@@ -34,11 +34,11 @@ pub struct SeriesInfo {
     pub rating: f32,
     pub chapter_list_info: LinkedList<ChapterListInfo>,
 }
-
 impl SeriesInfo {
+    #[must_use]
     pub fn sum_total_likes(&self) -> u32 {
         let mut accumulator = 0;
-        for chapter in self.chapter_list_info.iter() {
+        for chapter in &self.chapter_list_info {
             accumulator += chapter.likes;
         }
 
@@ -55,7 +55,8 @@ pub struct UserComment {
 }
 
 impl UserComment {
-    pub fn new(
+    #[must_use]
+    pub const fn new(
         user: String,
         body: String,
         post_date: String,
@@ -74,3 +75,14 @@ impl UserComment {
     }
 }
 
+pub struct LikesDate {
+    pub likes: u32,
+    pub date: String,
+}
+
+impl LikesDate {
+    #[must_use]
+    pub const fn new(likes: u32, date: String) -> Self {
+        Self { likes, date }
+    }
+}

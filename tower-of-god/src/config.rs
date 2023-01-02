@@ -14,7 +14,6 @@ pub struct ChapterInfo {
     pub likes: u32,
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
-    
 }
 
 pub trait CommentSum {
@@ -46,7 +45,7 @@ pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
     // Where you would put the URL 'episode_no=' offset.
     // If the chapter number and the URL number dont match, put the difference here.
     // eg. episode 550 of ToG is really 551 in the URL number, so you put 1 here.
-    // This is due to a URL no mishap, specificly no=221.
+    // This is due to a URL no mishap, specifically no=221.
     // The goal is to align the chapter number seen on the list page with the input values used in the CLI run.
     // This makes it much easier to use for everyone and gives expected results.
     episode_url_offset: 1,

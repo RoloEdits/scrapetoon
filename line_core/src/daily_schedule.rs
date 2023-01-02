@@ -4,19 +4,20 @@ use scraper::{ElementRef, Html, Selector};
 
 use crate::DailyScheduleInfo;
 
-pub async fn parse_daily_schedule() -> LinkedHashSet<DailyScheduleInfo> {
+pub async fn parse() -> LinkedHashSet<DailyScheduleInfo> {
     const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 
     let mut series: LinkedHashSet<DailyScheduleInfo> = LinkedHashSet::new();
 
-    let html = if let Ok(html_response) = ResponseFactory::get(DAILY_SCHEDULE).await {
-        html_response
-    } else {
-        panic!("Error conncting to URL webpage: {}", DAILY_SCHEDULE)
-    }
-    .text()
-    .await
-    .expect("Error getting HTML from response");
+    let html = ResponseFactory::get(DAILY_SCHEDULE)
+        .await
+        .map_or_else(
+            |_| panic!("Error connecting to URL webpage: {DAILY_SCHEDULE}"),
+            |html_response| html_response,
+        )
+        .text()
+        .await
+        .expect("Error getting HTML from response");
 
     let html = Html::parse_document(&html);
     let daily_card = Selector::parse("ul.daily_card>li").unwrap();
@@ -67,21 +68,22 @@ fn parse_daily_schedule_total_likes(card: &ElementRef) -> u32 {
     let mut result = String::new();
 
     for likes in card.select(&likes_selector) {
-        result = likes.text().collect::<Vec<_>>()[0].to_string()
+        result = likes.text().collect::<Vec<_>>()[0].to_string();
     }
 
     match result {
         sub_text if sub_text.ends_with('M') => {
-            (sub_text
+            let millions = sub_text
                 .replace('M', "")
                 .parse::<f32>()
-                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
-                * 1_000_000.0) as u32
+                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}"))
+                * 1_000_000.0;
+            millions as u32
         }
         sub_text => sub_text
             .replace(',', "")
             .parse::<u32>()
-            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text)),
+            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}")),
     }
 }
 
@@ -91,7 +93,7 @@ fn parse_daily_schedule_genre(card: &ElementRef) -> String {
     let mut result = String::new();
 
     for genre in card.select(&genre_selector) {
-        result = genre.text().collect::<Vec<_>>()[0].to_string()
+        result = genre.text().collect::<Vec<_>>()[0].to_string();
     }
 
     result
@@ -103,7 +105,7 @@ fn parse_daily_schedule_author(card: &ElementRef) -> String {
     let mut result = String::new();
 
     for author in card.select(&author_selector) {
-        result = author.text().collect::<Vec<_>>()[0].to_string()
+        result = author.text().collect::<Vec<_>>()[0].to_string();
     }
 
     result
@@ -115,7 +117,7 @@ fn parse_daily_schedule_title(card: &ElementRef) -> String {
     let mut result = String::new();
 
     for title in card.select(&title_selector) {
-        result = title.text().collect::<Vec<_>>()[0].to_string()
+        result = title.text().collect::<Vec<_>>()[0].to_string();
     }
 
     result

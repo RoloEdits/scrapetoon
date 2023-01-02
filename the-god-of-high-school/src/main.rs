@@ -1,13 +1,12 @@
-use args::CliArgs;
-use clap::*;
+use clap::Parser;
+use cli_core::StoryCliArgs;
 use the_god_of_high_school::config;
 
-mod args;
 mod csv;
 
 #[tokio::main]
 async fn main() {
-    let args = CliArgs::parse();
+    let args = StoryCliArgs::parse();
 
     let (series_info, parsed_chapters) = the_god_of_high_school::parse_chapters(
         args.start,
@@ -18,5 +17,10 @@ async fn main() {
     )
     .await;
 
-    csv::write(&args.output, &parsed_chapters, &series_info, config::CONFIG.filename);
+    csv::write(
+        &args.output,
+        &parsed_chapters,
+        &series_info,
+        config::CONFIG.filename,
+    );
 }

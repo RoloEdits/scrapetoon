@@ -3,7 +3,7 @@ use hashlink::LinkedHashSet;
 use line_core::{DailyScheduleInfo, SeriesInfo};
 
 pub fn write_daily_schedule(path: &str, daily_schedule: &LinkedHashSet<DailyScheduleInfo>) {
-    let final_path = format!("{}{}", path, "daily_schedule.csv");
+    let final_path = format!("{path}daily_schedule.csv");
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
     writer
@@ -38,8 +38,8 @@ pub fn write_series_info(path: &str, series_info: &SeriesInfo) {
         .title
         .replace(['/', '<', '>', ':', '"', '\\', '|', '?', '*'], "");
 
-    let filename = format!("{}.csv", cleaned_filename);
-    let final_path = format!("{}{}", path, filename);
+    let filename = format!("{cleaned_filename}.csv");
+    let final_path = format!("{path}{filename}");
     let mut writer =
         csv::Writer::from_path(final_path).expect("The system cannot find the path specified");
 
@@ -57,12 +57,12 @@ pub fn write_series_info(path: &str, series_info: &SeriesInfo) {
             "total_chapters",
             "chapter_number",
             "likes",
-            "chater_release_date",
+            "chapter_release_date",
             "scrape_date",
         ])
         .expect("Couldn't write to file.");
 
-    for chapter in series_info.chapter_list_info.iter() {
+    for chapter in &series_info.chapter_list_info {
         let title = series_info.title.to_string();
         let author = series_info.author.to_string();
         let genre = series_info.genre.to_string();

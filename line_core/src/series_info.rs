@@ -3,11 +3,11 @@ use project_core::ResponseFactory;
 use scraper::{ElementRef, Html, Selector};
 use std::thread;
 
-use crate::parse_chapter_list::parse_chapter_list_pages;
+use crate::chapter_list;
 
-use super::*;
+use super::{regex, LinkedList, SeriesInfo};
 
-pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
+pub async fn parse(end: u16, input_url: &str) -> SeriesInfo {
     let (genre, _id) = parse_url_info(input_url);
 
     let mut chapter_list_info = LinkedList::new();
@@ -15,7 +15,7 @@ pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
     let (title, author, status, release_day, views, subscribers, rating) =
         parse_series_page_info(input_url).await;
 
-    parse_chapter_list_pages(end, input_url, &mut chapter_list_info).await;
+    chapter_list::parse(end, input_url, &mut chapter_list_info).await;
 
     SeriesInfo {
         title,
@@ -23,10 +23,10 @@ pub async fn series_info(end: u16, input_url: &str) -> SeriesInfo {
         genre,
         status,
         release_day,
-        chapter_list_info,
         views,
         subscribers,
         rating,
+        chapter_list_info,
     }
 }
 
@@ -43,14 +43,15 @@ fn parse_url_info(url: &str) -> (String, u16) {
 
 // Series Page
 async fn parse_series_page_info(url: &str) -> (String, String, String, String, u64, u32, f32) {
-    let html = if let Ok(html_response) = ResponseFactory::get(url).await {
-        html_response
-    } else {
-        panic!("Error conncting to URL webpage: {}", url)
-    }
-    .text()
-    .await
-    .expect("Error getting HTML from response");
+    let html = ResponseFactory::get(url)
+        .await
+        .map_or_else(
+            |_| panic!("Error connecting to URL webpage: {url}"),
+            |html_response| html_response,
+        )
+        .text()
+        .await
+        .expect("Error getting HTML from response");
 
     let title = parse_series_page_title(&html);
     let author = parse_series_page_author(&html);
@@ -83,7 +84,7 @@ fn parse_series_page_title(html: &str) -> String {
     let mut result = String::new();
 
     for word in title_text {
-        result.push_str(word)
+        result.push_str(word);
     }
 
     result.replace(':', ": ")
@@ -117,20 +118,19 @@ fn parse_series_page_subscribers(html: &str) -> u32 {
 
     match result {
         sub_text if sub_text.ends_with('M') => {
-            (sub_text
+            let float = sub_text
                 .replace('M', "")
                 .parse::<f32>()
                 .unwrap_or_else(|_| {
-                    panic!("Error! Couldn't get subscriber count. Value ={}", sub_text)
+                    panic!("Error! Couldn't get subscriber count. Value ={sub_text}")
                 })
-                * 1_000_000.0) as u32
+                * 1_000_000.0;
+            float as u32
         }
         sub_text => sub_text
             .replace(',', "")
             .parse::<u32>()
-            .unwrap_or_else(|_| {
-                panic!("Error! Couldn't get subscriber count. Value ={}", sub_text)
-            }),
+            .unwrap_or_else(|_| panic!("Error! Couldn't get subscriber count. Value ={sub_text}")),
     }
 }
 
@@ -151,23 +151,25 @@ fn parse_series_page_views(html: &str) -> u64 {
 
     match result {
         sub_text if sub_text.ends_with('M') => {
-            (sub_text
+            let million = sub_text
                 .replace('M', "")
                 .parse::<f64>()
-                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
-                * 1_000_000.0) as u64
+                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}"))
+                * 1_000_000.0;
+            million as u64
         }
         sub_text if sub_text.ends_with('B') => {
-            (sub_text
+            let billion = sub_text
                 .replace('B', "")
                 .parse::<f64>()
-                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text))
-                * 1_000_000_000.0) as u64
+                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}"))
+                * 1_000_000_000.0;
+            billion as u64
         }
         sub_text => sub_text
             .replace(',', "")
             .parse::<u64>()
-            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={}", sub_text)),
+            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}")),
     }
 }
 
@@ -206,15 +208,14 @@ fn parse_series_page_author(html: &str) -> String {
     let author_without_link_selector = Selector::parse(r"div.author_area").unwrap();
 
     let mut author_element = html.select(&author_with_link_selector);
-    let author_fragment: ElementRef = match author_element.next() {
-        Some(some) => some,
-
-        None => {
+    let author_fragment: ElementRef = author_element.next().map_or_else(
+        || {
             let without_link = html.select(&author_without_link_selector).next().unwrap();
 
             without_link
-        }
-    };
+        },
+        |some| some,
+    );
 
     let author_text = author_fragment.text().next().unwrap();
 
@@ -430,7 +431,7 @@ mod series_info_parsing_tests {
     <em class="cnt">1.1M</em>
 </li>"#;
 
-const VIEWS_4: &str = r#"<li>
+        const VIEWS_4: &str = r#"<li>
     <span class="ico_view">view</span>
     <em class="cnt">956.3M</em>
 </li>"#;
@@ -500,7 +501,7 @@ const VIEWS_4: &str = r#"<li>
 
         assert_eq!(author, "instantmiso".to_string());
         assert_eq!(author_1, "HYBE".to_string());
-        assert_eq!(author_2, "PASA , TARU ...")
+        assert_eq!(author_2, "PASA , TARU ...");
     }
 
     #[test]

@@ -27,18 +27,16 @@ impl CommentSum for LinkedList<ChapterInfo> {
 }
 
 pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
-
     filename: "true-beauty",
 
     page_url: "https://www.webtoons.com/en/romance/truebeauty/list?title_no=1436",
 
-    episode_url: "https://www.webtoons.com/en/romance/truebeauty/episode-0-/viewer?title_no=1436&episode_no=",
+    episode_url:
+        "https://www.webtoons.com/en/romance/truebeauty/episode-0-/viewer?title_no=1436&episode_no=",
 
     episode_url_offset: 0,
 };
 
 type Skip = fn(u16) -> bool;
 
-pub const TO_SKIP: Skip = |_chapter: u16| -> bool {
-    false
-};
+pub const TO_SKIP: Skip = |_chapter: u16| -> bool { false };

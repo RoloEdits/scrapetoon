@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
-pub struct LineArgs {
+pub struct Scrapetoon {
     /// Which source of data you wish to scrape
     #[command(subcommand)]
     pub source: SourceData,

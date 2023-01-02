@@ -1,13 +1,12 @@
-use args::CliArgs;
-use clap::*;
+use clap::Parser;
+use cli_core::StoryCliArgs;
 use tower_of_god::config;
 
-mod args;
 mod csv;
 
 #[tokio::main]
 async fn main() {
-    let args = CliArgs::parse();
+    let args = StoryCliArgs::parse();
 
     let (series_info, parsed_chapters) = tower_of_god::parse_chapters(
         args.start,
@@ -18,5 +17,10 @@ async fn main() {
     )
     .await;
 
-    csv::write(&args.output, &parsed_chapters, &series_info, config::CONFIG.filename);
+    csv::write(
+        &args.output,
+        &parsed_chapters,
+        &series_info,
+        config::CONFIG.filename,
+    );
 }

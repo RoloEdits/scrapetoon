@@ -7,27 +7,20 @@ use std::{collections::LinkedList, thread};
 
 use crate::ChapterListInfo;
 
-pub async fn parse_chapter_list_pages(
-    end: u16,
-    input_url: &str,
-    chapter_info: &mut LinkedList<ChapterListInfo>,
-) {
+pub async fn parse(end: u16, input_url: &str, chapter_info: &mut LinkedList<ChapterListInfo>) {
     let bar = ProgressBarFactory::get_bar(end);
 
     for page in 1..=end {
-        let url = format!("{}&page={}", input_url, page);
+        let url = format!("{input_url}&page={page}");
 
-        let html_response = match ResponseFactory::get(&url).await {
-            Ok(ok) => ok,
-            Err(_) => {
-                eprintln!("Error connecting to webpage, attempting to save progress and exit...");
+        let html_response = if let Ok(ok) = ResponseFactory::get(&url).await {
+            ok
+        } else {
+            eprintln!("Error connecting to webpage, attempting to save progress and exit...");
 
-                if chapter_info.is_empty() {
-                    panic!("Nothing to save, exiting.");
-                }
+            assert!(!chapter_info.is_empty(), "Nothing to save, exiting.");
 
-                break;
-            }
+            break;
         }
         .text()
         .await
@@ -54,7 +47,7 @@ fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<Ch
             chapter_number,
             likes,
             date,
-        })
+        });
     }
 }
 

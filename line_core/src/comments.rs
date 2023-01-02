@@ -4,6 +4,7 @@ use std::collections::LinkedList;
 
 use crate::UserComment;
 
+#[must_use]
 pub fn parse_chapter_number(html: &Html) -> u16 {
     let chapter_number_selector = Selector::parse("span.tx").unwrap();
 
@@ -17,6 +18,7 @@ pub fn parse_chapter_number(html: &Html) -> u16 {
     chapter_number.replace('#', "").parse::<u16>().unwrap()
 }
 
+#[must_use]
 pub fn parse_comment_count(html: &Html) -> u32 {
     let comment_amount_selector = Selector::parse(r#"span[class="u_cbox_count"]"#).unwrap();
 
@@ -30,6 +32,7 @@ pub fn parse_comment_count(html: &Html) -> u32 {
     chapter_number.replace(',', "").parse::<u32>().unwrap()
 }
 
+#[must_use]
 pub fn parse_user_comments(html: &Html) -> LinkedList<UserComment> {
     let mut comments: LinkedList<UserComment> = LinkedList::new();
 
@@ -86,10 +89,11 @@ fn parse_comment_post_date(user_comment: ElementRef, comment_date_selector: &Sel
     .text()
     .collect::<Vec<_>>()[0];
     let datetime = NaiveDate::parse_from_str(comment_date, "%b %e, %Y").unwrap();
-    let formated_date = datetime.format("%b %d, %Y").to_string();
-    formated_date
+    let formatted_date = datetime.format("%b %d, %Y").to_string();
+    formatted_date
 }
 
+#[must_use]
 pub fn parse_comment_reply_count(
     user_comment: ElementRef,
     comment_reply_count_selector: &Selector,
@@ -108,6 +112,7 @@ pub fn parse_comment_reply_count(
     comment_reply_count
 }
 
+#[must_use]
 pub fn parse_comment_downvote(
     user_comment: ElementRef,
     comment_downvote_selector: &Selector,
@@ -123,6 +128,7 @@ pub fn parse_comment_downvote(
     comment_downvote
 }
 
+#[must_use]
 pub fn parse_comment_upvote(user_comment: ElementRef, comment_upvote_selector: &Selector) -> u32 {
     let comment_upvote = match user_comment.select(comment_upvote_selector).next() {
         Some(upvote) => upvote,
@@ -135,6 +141,7 @@ pub fn parse_comment_upvote(user_comment: ElementRef, comment_upvote_selector: &
     comment_upvote
 }
 
+#[must_use]
 pub fn parse_comment_body(user_comment: ElementRef, comment_text_selector: &Selector) -> String {
     let comment_text = match user_comment.select(comment_text_selector).next() {
         Some(text) => text,
