@@ -25,3 +25,6 @@ target/
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 .fleet/*
+.idea/vcs.xml
+.idea/tower_of_god_site_engagement.iml
+.idea/modules.xml
