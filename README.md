@@ -1,6 +1,6 @@
 <h1 style="text-align: center;">ScrapeToon</h1>
 
-A tool for scraping information from [Webtoons](https://www.webtoons.com/). Currently this is kept as generic as possible and focuses on the Daily Schedule page and any stories' home page.
+A tool for scraping information from [Webtoons](https://www.webtoons.com/). Currently, this is kept as generic as possible and focuses on the Daily Schedule page and any stories' home page.
 
 ## Functionality
 
@@ -8,10 +8,10 @@ A tool for scraping information from [Webtoons](https://www.webtoons.com/). Curr
 
 The data gathered from here is organized like so:
 
-|title|author|genre|total_likes|status| scrape_date|
-|:---:|:----:|:---:|:---------:|:----:|:----------:|
+| title | author | genre | total_likes | status | scrape_date |
+|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:|
 
-The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad cast with a net, but if you want more accuracy then you would need to use the other part of the scraper and scrape the stories page.
+The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad cast with a net, but if you want more accuracy than you would need to use the other part of the scraper and scrape the stories page.
 
 ### Story Page
 
@@ -56,7 +56,7 @@ For example:
 .\scrapetoon.exe daily --output "D:\Desktop"
 ```
 
-`story` requires a bit more. Firstly a URL needs be given after, with the flags `-u | --url`.
+`story` requires a bit more. Firstly a URL needs to be given after, with the flags `-u | --url`.
 
 ```bash
 .\scrapetoon.exe story --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154"
@@ -64,7 +64,7 @@ For example:
 
 And secondly, it also requires a numerical value to be given for an `end`. This value correlates to the page numbers below the chapter list. The scraper goes from 1 to the entered value. If you want all pages to be gone through, then you just enter the highest, the last, page.
 
-<img src="imgs/omniscient_reader_page_numbers.png">
+<img src="imgs/omniscient_reader_page_numbers.png" alt="page numbers for chapter list">
 
 In this case, if I want all pages, I enter 13
 
@@ -86,7 +86,7 @@ And same as before the `-o | --output` flag.
 .\scrapetoon.exe story -url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end-page 13 --output "D:\Desktop"
 ```
 
-Once you have what you need entered in, press the `ENTER` key and it will begin its operation. If you entered an invalid output path, it will stop and inform you. From the entered path, a folder in created with the name of the current UTC date as its name. After that you will be prompted with a message of an attempt to connect, and once connected, a progress bar will render showing the elapsed time as well as the current amount done and what's needed.
+Once you have what you need entered in, press the `ENTER` key, and it will begin its operation. If you entered an invalid output path, it will stop and inform you. From the entered path, a folder in created with the name of the current UTC date as its name. After that you will be prompted with a message of an attempt to connect, and once connected, a progress bar will render showing the elapsed time as well as the current amount done and what's needed.
 
 The output files will either be `daily_schedule.csv` if you configured for `daily`, or `<STORY NAME>.csv` if you configured for `story`. In this examples case: `omniscient reader.csv`.
 
@@ -96,12 +96,22 @@ As only so much data can be gotten so that it can work for all the stories on We
 
 That's where story specific projects come in. These projects are there to get extra data otherwise not provided by the more generic scraping already provided. Like season number, season chapter, as well as comment data, such as amount a chapter has as well as the actual comments themselves. Being able to tailor what you get that's unique to a story could allow for a more fined grained experience.
 
-I myself will provided an example project as part of the documentation, that being the tower-of-god project folder. And I will use that to document all the steps necessary to adapt what was done if you would want to make a project on your own.
+I myself will provide an example project as part of the documentation, that being the tower-of-god project folder. And I will use that to document all the steps necessary to adapt what was done if you would want to make a project on your own.
 
-In light of the more focused and slightly more technical requirements comes with it a runtime dependency. [ChromeDriver](https://chromedriver.chromium.org/downloads). To know which one to download you can just open up chrome and check the version you have. Download the matching major release version. 107, 108, 109, etc.
+In light of the more focused, and slightly more technical requirements, comes with it a runtime dependency. [ChromeDriver](https://chromedriver.chromium.org/downloads). To know which one to download you can just open up chrome and check the version you have. Download the matching major release version. 107, 108, 109, etc.
 
+## Making Your Own Series Project
+### Step 1
 
+Copy the folder and then rename it to the story you want. In the new renamed folder, open the `Cargo.toml` file and then change the package name to match the folder name.
 
+After that add the folder name to the `Cargo.toml` file of the base directory.
+
+Inside of main rename the name `use <project name>::config;` and `<project name>::parse_chapters` to match with the new names.
+
+### Skipping and Bad Page Loads
+
+As a general rule of thumb if there needed to be an offset, there needs to be some skipping done. The same number as the amount offset by.
 
 # License
 
