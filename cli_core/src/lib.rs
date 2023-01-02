@@ -5,6 +5,9 @@ pub struct ProgressBarFactory {}
 
 impl ProgressBarFactory {
     #[must_use]
+    /// # Panics
+    ///
+    /// Will panic if unable to unwrap bar style. In theory should never panic unless library API changes.
     pub fn get_bar(count: u16) -> ProgressBar {
         let bar = ProgressBar::new(u64::from(count));
 

@@ -14,6 +14,9 @@ use config::ChapterInfo;
 
 mod story_specific_parsing;
 
+/// # Panics
+///
+/// Will panic if `ChromeDriver` isn't running
 pub async fn parse_chapters(
     start: u16,
     end: u16,
@@ -83,7 +86,7 @@ pub async fn parse_chapters(
             .clone();
 
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
-        let user_comments = comments::parse_user_comments(&html);
+        let user_comments = comments::parse_users(&html);
 
         result.push_back({
             ChapterInfo {

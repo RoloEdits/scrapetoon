@@ -62,7 +62,7 @@ pub fn write(
             let comment_body = comment.body.clone();
             let post_date = comment.post_date.clone();
             let upvotes = comment.upvotes.to_string();
-            let downsvotes = comment.downvotes.to_string();
+            let downvotes = comment.downvotes.to_string();
             let reply_count = comment.reply_count.to_string();
 
             writer
@@ -85,7 +85,7 @@ pub fn write(
                     &comment_body,
                     &post_date,
                     &upvotes,
-                    &downsvotes,
+                    &downvotes,
                     &reply_count,
                     &current_utc_date,
                 ])

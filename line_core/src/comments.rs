@@ -4,6 +4,9 @@ use std::collections::LinkedList;
 
 use crate::UserComment;
 
+///# Panics
+///
+/// Will panic if there is no chapter number to parse, or if there is a non number attempting to be parsed..
 #[must_use]
 pub fn parse_chapter_number(html: &Html) -> u16 {
     let chapter_number_selector = Selector::parse("span.tx").unwrap();
@@ -18,6 +21,9 @@ pub fn parse_chapter_number(html: &Html) -> u16 {
     chapter_number.replace('#', "").parse::<u16>().unwrap()
 }
 
+///# Panics
+///
+/// Will panic if there is no comment number to parse, or if there is a non number attempting to be parsed..
 #[must_use]
 pub fn parse_comment_count(html: &Html) -> u32 {
     let comment_amount_selector = Selector::parse(r#"span[class="u_cbox_count"]"#).unwrap();
@@ -32,8 +38,12 @@ pub fn parse_comment_count(html: &Html) -> u32 {
     chapter_number.replace(',', "").parse::<u32>().unwrap()
 }
 
+
+///# Panics
+///
+/// Will panic if there is no user comments to parse.
 #[must_use]
-pub fn parse_user_comments(html: &Html) -> LinkedList<UserComment> {
+pub fn parse_users(html: &Html) -> LinkedList<UserComment> {
     let mut comments: LinkedList<UserComment> = LinkedList::new();
 
     let comment_list_selector = Selector::parse(r#"ul[class="u_cbox_list"]>li"#).unwrap();
@@ -93,6 +103,9 @@ fn parse_comment_post_date(user_comment: ElementRef, comment_date_selector: &Sel
     formatted_date
 }
 
+///# Panics
+///
+/// Will panic if there is no user reply count to parse, or if there is a non number attempting to be parsed.
 #[must_use]
 pub fn parse_comment_reply_count(
     user_comment: ElementRef,
@@ -112,6 +125,9 @@ pub fn parse_comment_reply_count(
     comment_reply_count
 }
 
+///# Panics
+///
+/// Will panic if there is no downvote to parse, or if there is a non number attempting to be parsed.
 #[must_use]
 pub fn parse_comment_downvote(
     user_comment: ElementRef,
@@ -128,6 +144,9 @@ pub fn parse_comment_downvote(
     comment_downvote
 }
 
+///# Panics
+///
+/// Will panic if there is no upvote to parse, or if there is a non number attempting to be parsed.
 #[must_use]
 pub fn parse_comment_upvote(user_comment: ElementRef, comment_upvote_selector: &Selector) -> u32 {
     let comment_upvote = match user_comment.select(comment_upvote_selector).next() {
@@ -351,7 +370,7 @@ mod parse_comments_tests {
 
         let html = Html::parse_document(USER_COMMENT_LIST);
 
-        let result = parse_user_comments(&html);
+        let result = parse_users(&html);
 
         assert_eq!(result.len(), 2);
 

@@ -6,7 +6,14 @@ use std::{env, fs, thread};
 pub mod regex;
 pub struct ResponseFactory {}
 
+
 impl ResponseFactory {
+    ///# Panics
+    ///
+    /// Will panic if there it can't connect to URL.
+    ///
+    /// # Errors
+    ///
     pub async fn get(url: &str) -> Result<Response, Error> {
         let mut retries = 5;
         let mut wait = 1;

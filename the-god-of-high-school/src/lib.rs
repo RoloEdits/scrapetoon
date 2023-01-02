@@ -13,6 +13,9 @@ use thirtyfour::prelude::*;
 pub mod config;
 use config::ChapterInfo;
 
+/// # Panics
+///
+/// Will panic if `ChromeDriver` isn't running
 pub async fn parse_chapters(
     start: u16,
     end: u16,
@@ -72,7 +75,7 @@ pub async fn parse_chapters(
             .date
             .clone();
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
-        let comments = comments::parse_user_comments(&html);
+        let comments = comments::parse_users(&html);
 
         result.push_back({
             ChapterInfo {

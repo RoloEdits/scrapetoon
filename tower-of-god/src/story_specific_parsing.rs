@@ -1,7 +1,7 @@
 use project_core::regex;
 use scraper::{Html, Selector};
 
-// Story specific parsing implimentations go here.
+// Story specific parsing implementations go here.
 
 pub fn parse_season_number(html: &Html) -> u8 {
     // input eg. '[Season 3] Ep. 133'
@@ -94,13 +94,13 @@ mod tests {
         <h1 class="subj_episode" title="[Season 3] Ep. 133">[Season 3] Ep. 133</h1>
     </div>"##;
 
-        let html1 = Html::parse_document(SEASON_CHAPTER_NUMBER1);
-
         const SEASON_CHAPTER_NUMBER2: &str = r##"<div class="subj_info">
         <a href="https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95" class="subj NPI=a:end,g:en_en" title="Tower of God">Tower of God</a>
         <span class="ico_arr2"></span>
         <h1 class="subj_episode" title="[Season 1] Ep. 1 - 1F.Headon's Floor">[Season 1] Ep. 1 - 1F.Headon's Floor</h1>
     </div>"##;
+
+        let html1 = Html::parse_document(SEASON_CHAPTER_NUMBER1);
 
         let html2 = Html::parse_document(SEASON_CHAPTER_NUMBER2);
 

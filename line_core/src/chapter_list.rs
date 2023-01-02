@@ -6,7 +6,9 @@ use scraper::{ElementRef, Html, Selector};
 use std::{collections::LinkedList, thread};
 
 use crate::ChapterListInfo;
-
+///# Panics
+///
+/// Will panic if there was a response but at the same time, the html text somehow didn't come with it unwrapping to a None.
 pub async fn parse(end: u16, input_url: &str, chapter_info: &mut LinkedList<ChapterListInfo>) {
     let bar = ProgressBarFactory::get_bar(end);
 

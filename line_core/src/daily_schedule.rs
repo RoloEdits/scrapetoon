@@ -4,6 +4,9 @@ use scraper::{ElementRef, Html, Selector};
 
 use crate::DailyScheduleInfo;
 
+///# Panics
+///
+/// Will panic if there was a response but at the same time, the html text somehow didn't come with it unwrapping to a None.
 pub async fn parse() -> LinkedHashSet<DailyScheduleInfo> {
     const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 
