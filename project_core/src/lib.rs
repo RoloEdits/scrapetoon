@@ -6,7 +6,6 @@ use std::{env, fs, thread};
 pub mod regex;
 pub struct ResponseFactory {}
 
-
 impl ResponseFactory {
     ///# Panics
     ///
@@ -73,7 +72,6 @@ pub struct SeriesConfiguration<'a> {
 
 #[must_use]
 pub fn validate_output_path_ends_correctly(path: &str) -> String {
-
     if path.ends_with('\\') || path.ends_with('/') {
         return path.to_string();
     }

@@ -74,7 +74,8 @@ pub async fn parse_chapters(
 
         // Story specific
         let season = story_specific_parsing::parse_season_number(&html);
-        let meaningful_chapter_number = story_specific_parsing::parse_meaningful_chapter_number(&html);
+        let meaningful_chapter_number =
+            story_specific_parsing::parse_meaningful_chapter_number(&html);
 
         // Works for all stories
         let chapter_number = comments::parse_chapter_number(&html);

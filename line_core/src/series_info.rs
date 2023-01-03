@@ -288,7 +288,7 @@ mod series_info_parsing_tests {
 
         let result = parse_series_page_rating(RATING);
 
-        assert_eq!(result, 9.86);
+        assert_eq!(result, 9.86_f32);
     }
 
     #[test]

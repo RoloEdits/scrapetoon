@@ -38,7 +38,6 @@ pub fn parse_comment_count(html: &Html) -> u32 {
     chapter_number.replace(',', "").parse::<u32>().unwrap()
 }
 
-
 ///# Panics
 ///
 /// Will panic if there is no user comments to parse.
@@ -384,6 +383,6 @@ mod parse_comments_tests {
         assert_eq!(check.upvotes, 63_591);
         assert_eq!(check.downvotes, 295);
         assert_eq!(check.reply_count, 114);
-        assert_eq!(check.post_date, "Nov 06, 2014");
+        assert_eq!(check.post_date, "2014-11-06");
     }
 }

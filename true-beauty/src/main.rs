@@ -1,7 +1,7 @@
 use clap::Parser;
 use cli_core::StoryCliArgs;
-use true_beauty::config;
 use project_core::validate_output_path_ends_correctly;
+use true_beauty::config;
 
 mod csv;
 

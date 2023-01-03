@@ -1,7 +1,7 @@
 use clap::Parser;
 use cli_core::StoryCliArgs;
-use the_god_of_high_school::config;
 use project_core::validate_output_path_ends_correctly;
+use the_god_of_high_school::config;
 
 mod csv;
 

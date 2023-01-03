@@ -1,7 +1,7 @@
 use clap::Parser;
 use cli_core::StoryCliArgs;
-use tower_of_god::config;
 use project_core::validate_output_path_ends_correctly;
+use tower_of_god::config;
 
 mod csv;
 

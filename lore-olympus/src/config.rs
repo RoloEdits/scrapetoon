@@ -4,7 +4,6 @@ use line_core::UserComment;
 use project_core::SeriesConfiguration;
 
 pub struct ChapterInfo {
-
     pub season: u8,
     pub meaningful_chapter_number: u16,
 
@@ -42,13 +41,4 @@ pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
 
 type Skip = fn(u16) -> bool;
 
-pub const TO_SKIP: Skip = |chapter: u16| -> bool {
-    match chapter {
-        13 => true,
-        18 => true,
-        31 => true,
-        47 => true,
-        120 => true,
-        _ => false,
-    }
-};
+pub const TO_SKIP: Skip = |chapter: u16| -> bool { matches!(chapter, 13 | 18 | 31 | 47 | 120) };

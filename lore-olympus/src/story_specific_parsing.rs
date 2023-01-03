@@ -14,16 +14,15 @@ pub fn parse_season_number(html: &Html) -> u8 {
         .text()
         .collect::<Vec<_>>()[0];
 
-    let season = match regex
-        .captures(title) {
-            Some(cap) => cap,
-            None => return 1
-        }
-        .get(1)
-        .unwrap()
-        .as_str()
-        .parse::<u8>()
-        .unwrap();
+    let season = match regex.captures(title) {
+        Some(cap) => cap,
+        None => return 1,
+    }
+    .get(1)
+    .unwrap()
+    .as_str()
+    .parse::<u8>()
+    .unwrap();
 
     season
 }
