@@ -429,14 +429,7 @@ And sense the `#<NUM>` matches up with the URL number, we can just use those sam
 ```rust
 // Lore Olympus
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
-    match chapter {
-        13 => true,
-        18 => true,
-        31 => true,
-        47 => true,
-        120 => true,
-        _ => false,
-    }
+        matches!(chapter, 13 | 18 | 31 | 47 | 120)
 };
 ```
 
@@ -450,7 +443,7 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
 ```
 ### lib.rs
 
-We we need to change the data to match what we changed to in the `ChapterInfo` struct.
+We need to change the data to match what we changed to in the `ChapterInfo` struct.
 
 In this section you might already be getting indicators about what we need to change. It tells us that there is no field named `season_chapter` on `ChapterInfo`. In our case we just need to change that to be our added `meaningful_chapter_number`.
 ```rust
