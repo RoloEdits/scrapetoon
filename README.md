@@ -125,7 +125,7 @@ cargo run --release -- --start <START> --end <END> --pages <PAGES> --output <OUT
 Example:
 
 ```shell
- cargo run -- --start 1 --end 230 --pages 23 --output "D:\temp\"
+ cargo run --release -- --start 1 --end 230 --pages 23 --output "D:\temp\"
 ```
 
 Time estimation:
@@ -781,7 +781,7 @@ writer
             ])
 ```
 
-To remove the dead code warning, we can simply comment out the unused `chapter_number`
+To remove the unused code warning, we can simply comment out the unused `chapter_number`
 
 ```rust
 // let chapter_number = chapter.chapter_number.to_string();
@@ -791,6 +791,36 @@ To remove the dead code warning, we can simply comment out the unused `chapter_n
 
 And with that, we are done. Having had hindsight when writing this up, all of what we did id confirmed to work. But in your case, you should test and run the app to make sure it works as expected.
 
+# Contribution
+
+If you want to contribute, first of all, thank you, communities can only grow with effort. Small projects like these, for niches like Webtoons, really goes a long way in adding some depth and quality.
+
+Contributing are pretty simple. For all instances, open a branch with a name that signifies the hopeful contribution, and then make whatever change you wanted, then begin the pull request process.
+
+## Rust
+For changes to rust based files, open up an issue first. That way if you have any question that crop up, the issue can be used to talk through things. Upon pull request, reference the issue. 
+
+Must fix most warning that pop up with:
+
+```shell
+cargo clippy -- -W clippy::pedantic
+```
+
+Any existing warnings are fine to leave, but any that are made from a change should be fixed, and if not, you must state a reason why in the pull request.
+
+As for tests, if you are adding a new project with custom parsing, tests must be provided with the story examples used in the tests.
+
+In general if you can provide test, please do. Helps to keep things sane.
+
+## CSV
+
+Csv submissions are also very much welcome. if you are adding a new project, putting in the csv you get out after use would be a great addition to the repo.
+
+## Documentation
+
+For markdown files, just simply passing a spell check should be good enough.
+
+For rust documentation, similar applies.
 
 # License
 
