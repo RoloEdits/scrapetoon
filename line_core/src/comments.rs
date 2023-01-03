@@ -99,7 +99,11 @@ fn parse_comment_post_date(user_comment: ElementRef, comment_date_selector: &Sel
     .text()
     .collect::<Vec<_>>()[0];
     let datetime = NaiveDate::parse_from_str(comment_date, "%b %e, %Y").unwrap();
-    let formatted_date = datetime.format("%b %d, %Y").to_string();
+
+    // %b %e, %Y -> Jun 3, 2022
+    // %b %d, %Y -> Jun 03, 2022
+    // %F -> 2022-06-03 (ISO 8601)
+    let formatted_date = datetime.format("%F").to_string();
     formatted_date
 }
 

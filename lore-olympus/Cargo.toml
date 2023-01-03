@@ -1,0 +1,18 @@
+[package]
+name = "lore-olympus"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thirtyfour = "0.31.0"
+tokio = { version = "1.21.2", features = ["full"] }
+scraper = "0.13.0"
+chrono = "0.4.23"
+regex = "1.7.0"
+csv = "1.1.6"
+clap = {version = "4.0.25", features = ["derive"]}
+project_core = { path = "../project_core" }
+line_core = { path = "../line_core" }
+cli_core = { path = "../cli_core" }
