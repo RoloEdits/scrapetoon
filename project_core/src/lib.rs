@@ -70,3 +70,19 @@ pub struct SeriesConfiguration<'a> {
     pub episode_url: &'a str,
     pub episode_url_offset: u16,
 }
+
+#[must_use]
+pub fn validate_output_path_ends_correctly(path: &str) -> String {
+
+    if path.ends_with('\\') || path.ends_with('/') {
+        return path.to_string();
+    }
+
+    let new_path = if env::consts::OS == "windows" {
+        format!("{path}\\")
+    } else {
+        format!("{path}/")
+    };
+
+    new_path
+}
