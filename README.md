@@ -102,6 +102,36 @@ In light of the more focused, and slightly more technical requirements, comes wi
 
 Additionally, beyond this point, I assume that you have already set up your rust development environment and are familiar with the basics of using VS Code. 
 
+## Using
+
+Binaries for these projects won't be provided, as it's too highly possible that the logic would need to be updated to accommodate new changes that break functionality. To use them you must clone the repo and build from source.
+
+Run the `chromedriver` that you downloaded and installed.
+
+`cd` into the project folder. The usage will look like this:
+
+```shell
+cargo run --release -- --start <START> --end <END> --pages <PAGES> --output <OUTPUT>
+```
+
+`--start`: Is the lowest number of the `#<NUM>` you wish to scrape.
+
+`--end`: is the largest number of the `#<NUM>` you wish to scrape.
+
+`--pages`: Is the largest chapter list page number that covers the start and end range given.
+
+`--output`: Is the location the program will save the file.
+
+Example:
+
+```shell
+ cargo run -- --start 1 --end 230 --pages 23 --output "D:\temp\"
+```
+
+Time estimation:
+
+Chapter amount * 5 / 60 = Minutes Needed. There is some preamble that needs to process, but the bulk of most stories will be taken up on in the chapter by chapter process.
+
 ## Adapting Your Own Series Project
 
 As part of the documentation, I will be showing a full conversion process from the base project to the final new story project.
@@ -110,7 +140,7 @@ The base project is `tower-of-god`. It has with it extra comments that go into s
 
 I will be adapting the new project to fit [Lore Olympus](https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320).
 
-### What's Included
+## What's Included
 
 No matter the story, there are things that can be shared between them no matter the case. This idea of working no matter the case needs purely means that it will run and not crash, whether the info can be used in the correct way or is representative of good data is undetermined.
 
@@ -121,7 +151,7 @@ As such, all data that is gotten as part of the [Story Page](#story-page) are in
 
 The way the scraping is implemented will work for all stories, but later on in this example, you will see that this data isn't always functionally usable.
 
-### Surveying Story
+## Surveying Story
 
 Firstly, we need to do some recon. Ideally, you know enough about the story already to know what else you can get from it as data. 
 
@@ -129,7 +159,7 @@ Going to the stories page a few things stand out immediately.
 
 ![Lore Olympus #229](imgs/lore_olympus_229.png)
 
-Thinking of what is not gotten already, or in a wrong way, I can see that there are seasons, and that there is potential of a pattern here with `(3)`. Scrolling beyond to other pages I can see that this holds true for season 2, with `(2)`, however going back before that, to season 1, there is no such `(1)` or any indicator of a season. We will need to keep this in mind.
+Thinking of what is not gotten already, or in a wrong way, I can see that there are seasons, and that there is potential of a pattern here with `(S3)`. Scrolling beyond to other pages I can see that this holds true for season 2, with `(S2)`, however going back before that, to season 1, there is no such `(S1)` or any indicator of a season. We will need to keep this in mind.
 
 Going further, I can see that there are some content that is not part of the actual continuity. Like a `Q&A` for `#18` and `Message and Concept Art` for `#13`. The choice of what to do in these misc. chapters, like spin-offs, is up to you. For this example, I will simply be bypassing them, focusing just on the main chapters of the story.
 
@@ -149,9 +179,9 @@ Back to the chapter list page, another thing that becomes apparent is that altho
 
 As far as story specific data, really it's just the season number that we want to add and that a chapter would be associated with a season. So with the surveying done, lets get to adapting.
 
-### Copying Project Folder and Adapting It
+## Copying Project Folder and Adapting It
 
-#### Cargo Workspace
+### Cargo Workspace
 
 First step here is to copy the `tower-of-god` project folder and then rename it to the story you want. In this examples case `lore-olympus`.
 
@@ -185,7 +215,7 @@ Adding the name:
 members = ["project_core", "line_core", "cli_core", "scrapetoon", "tower-of-god", "true-beauty", "the-god-of-high-school", "lore-olympus"]
 ```
 
-#### main.rs Changes
+### main.rs Changes
 
 Once this is done, open up the `main.rs` file inside the `src` folder.
 
@@ -228,7 +258,7 @@ async fn main() {
 
 This should fix those and set us up for the rest of the work we need to do.
 
-#### config.rs
+### config.rs
 
 Next up is to open the `config.rs` file. As much as could be put in one spot for ease of access was put here. 
 
@@ -286,7 +316,7 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
 
 Let's go through each part and explain in detail.
 
-##### ChapterInfo Struct
+#### ChapterInfo Struct
 
 ```rust
 // Unchanged - Tower of God
@@ -418,7 +448,7 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
     false
 };
 ```
-#### lib.rs
+### lib.rs
 
 We we need to change the data to match what we changed to in the `ChapterInfo` struct.
 
@@ -450,11 +480,11 @@ let meaningful_chapter_number = story_specific_parsing::parse_meaningful_chapter
 
 And now another error. But this one leads us to the next file.
 
-#### story_specific_parsing.rs
+### story_specific_parsing.rs
 
 To solve the error, we just need to rename the function `parse_season_chapter_number` to `parse_meaningful_chapter_number`, same as before. The logic inside won't work, but that's all we need to do now to get it to compile. To note here, you should use to rename ability of your text editor to change all instances of the functions name.
 
-##### Season
+#### Season
 
 Given that 'Tower of God' also has a season number, we can simply adapt its implementation.
 
@@ -490,7 +520,7 @@ pub fn parse_season_number(html: &Html) -> u8 {
 ![](imgs/subj_episode_example.png)
 
 This is great, as it's the area that has the info we need. Not just for the season, but also the correct, meaningful, chapter number we saw would be a problem earlier, but that will be next.
-###### Setup Testing
+##### Setup Testing
 First things first, to make the rest easy, we will go to a chapter, and once it's loaded, open up the dev tools of our browser. In Chrome, you can right-click and inspect. Then we need to get enter the selector tool and then click the `(S3) Episode <NUM>` part from above.
 
 ![](imgs/devtool_selector_tool.png)
@@ -531,7 +561,7 @@ const SEASON_NUMBER: &str = r#"<div class="subj_info">
 
 Now we can quickly test that what we are doing works.
 
-###### Logic
+##### Logic
 
 To get our season number, we first need to have the regex match our pattern of `(<SEASON>)`.
 
@@ -543,7 +573,7 @@ If you don't know regex, and even if you do, this can be super confusing. But ba
 
 Doing a test shows that it passes. But we have a problem here, as we saw earlier, there is no `(S1)` for those chapters. If you copied an element that that was from Season 1, you may and tested, it will have failed.
 
-For those who didn't use a chapter from Season 1, go now and copy an element the same as before and in the test function, copy the `SEASON_NUMBER`, `html`, `season_number`, and `result`. It will be simple enough to just add a 2 at the end of the varable name.
+For those who didn't use a chapter from Season 1, go now and copy an element the same as before and in the test function, copy the `SEASON_NUMBER`, `html`, `season_number`, and `result`. It will be simple enough to just add a 2 at the end of the variable name.
 
 ```rust
     #[test]
@@ -606,8 +636,160 @@ let season = match regex
 
 Now the test passes, and with that we have completed the season number logic.
 
-##### Meaningful Chapter Number
+#### Meaningful Chapter Number
 
+Explanation of the problem: In the most generic of cases, the chapter number gotten from parsing the `#<NUM>` gives us what we want. This covers most kinds of scenarios, and because of the details of how data is gotten, is still needed to be scraped to be linked with that data. However, in our case, it doesn't give the best representation of the actual chapter count progression and, thinking of end use, leaves gaps between where it skipped.
+
+To fix this we need to come up with a way that will either give us the data we need on from scraping the chapter, or manually offset the numbers on multiple points, where each point demarcating an instance we need to offset simply being subtracted by n-points amount. This kind of brute force method might be all that you have, in which case you just have to set up the logic yourself.
+
+In our case, as mentioned before, the chapter number we want is in the same group of data as the Season number was. All we need to do is adjust the regex to capture that value.
+
+As a reminder, the format is `(S<NUM>) Episode <NUM>`. As a benefit of skipping the extra misc. episodes that aren't related to the direct story continuity, all the chapters that will be parsed will have this pattern in the name. The Season 1 episodes just having `Episode <NUM>` as its pattern.
+
+The current functions logic happens to line up close enough, just like the previous case, so only some small modifications are needed.
+
+I won't be showing the test setup, as it's just a rehash of the prior showcase, but I would highly encourage setting them up to speed things up a lot.
+
+First, lets change the variable name to match the new expected data. `season_chapter` -> `meaningful_chapter_number`.
+
+After that is the regex. This also only needs a small modification.
+
+```rust
+let regex = regex![r"Episode\s(\d+)"];
+```
+
+Explained simply, this is looking for a pattern of `Episode<WHITESPACE><ONE_OR_MORE_DIGITS>`
+
+And that's really all we need to do here.
+
+### csv.rs
+
+First up in this file is the rest of the cleanup from the project change. Just like before just change the name to the new project name.
+
+From this: 
+```rust
+use tower_of_god::config::{ChapterInfo, CommentSum};
+```
+
+To this:
+```rust
+use lore_olympus::config::{ChapterInfo, CommentSum};
+```
+
+After that, we need to define what the output record will look like.
+
+```rust
+writer.write_record([
+            "title",
+            "author",
+            "genre",
+            "status",
+            "release_day",
+            "views",
+            "subscribers",
+            "rating",
+            "chapter",
+            "comments",
+            "total_comments",
+            "likes",
+            "total_likes",
+            "date",
+            "user",
+            "comment_body",
+            "post_date",
+            "upvotes",
+            "downvotes",
+            "reply_count",
+            "scrape_date",
+
+            "season",
+            "season_chapter",
+        ])
+```
+
+From this list, we can leave most things alone. The main thing being that there is no `season_chapter`. We can choose to just replace this with the `meaningful_chapter_number`, leaving the `chapter` column alone, but as that field is what the `meaningful_chapter_number` is supposed to represent, we will just remove the `season_chapter` part and then in the `chapter` assignment, use the new data.
+
+Going down below this part, we need to change the variable name to match the new expectation, as well as reference the new field.
+
+From this:
+```rust
+let season_chapter = chapter.season_chapter.to_string();
+```
+To this:
+```rust
+let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
+```
+
+Finally, we the alignment of the data to what we wrote in our record up above.
+
+```rust
+writer
+      .write_record([
+            &title,
+            &author,
+            &genre,
+            &status,
+            &release_day,
+            &views,
+            &subscribers,
+            &rating,
+            &chapter_number,
+            &comments,
+            &total_comments,
+            &likes,
+            &total_likes,
+            &date,
+            &user,
+            &comment_body,
+            &post_date,
+            &upvotes,
+            &downvotes,
+            &reply_count,
+            &current_utc_date,
+            &season,
+            &season_chapter,
+            ])
+```
+
+We can remove the `season_chapter` altogether. And where `&chapter_number` is, we can put our new data `&meaningful_chapter_number`.
+
+```rust
+writer
+      .write_record([
+            &title,
+            &author,
+            &genre,
+            &status,
+            &release_day,
+            &views,
+            &subscribers,
+            &rating,
+            &meaningful_chapter_number,
+            &comments,
+            &total_comments,
+            &likes,
+            &total_likes,
+            &date,
+            &user,
+            &comment_body,
+            &post_date,
+            &upvotes,
+            &downvotes,
+            &reply_count,
+            &current_utc_date,
+            &season,
+            ])
+```
+
+To remove the dead code warning, we can simply comment out the unused `chapter_number`
+
+```rust
+// let chapter_number = chapter.chapter_number.to_string();
+```
+
+## Conclusion
+
+And with that, we are done. Having had hindsight when writing this up, all of what we did id confirmed to work. But in your case, you should test and run the app to make sure it works as expected.
 
 
 # License
