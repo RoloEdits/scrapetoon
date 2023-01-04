@@ -433,6 +433,20 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
 };
 ```
 
+Note: If the amount you are skipping becomes so long that it becomes unwieldy to put all in the `matches!` macro, you can use a match statement instead:
+```rust
+pub const TO_SKIP: Skip = |chapter: u16| -> bool {
+        match chapter {
+            13 => true,
+            18 => true,
+            31 => true,
+            47 => true,
+            120 => true,
+            _ => false
+        }
+};
+```
+
 If you have nothing to skip, you can simply just return `false`
 
 ```rust
