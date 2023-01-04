@@ -1,8 +1,10 @@
 <h1 style="text-align: center;">ScrapeToon</h1>
 
-A tool for scraping information from [Webtoons](https://www.webtoons.com/). Currently, this is kept as generic as possible and focuses on the Daily Schedule page and any stories' home page.
+A tool for scraping information from [Webtoons](https://www.webtoons.com/).
 
-## Functionality
+There is a generic tool, `scrapetoon`, that gets Daily Schedule information as well as Story Page information. In addition to this are story specialized projects that get the same info as the Story Page, but also things like comments.
+
+## What's Scraped
 
 ### Daily Schedule
 
@@ -11,16 +13,16 @@ The data gathered from here is organized like so:
 | title | author | genre | total_likes | status | scrape_date |
 |:-----:|:------:|:-----:|:-----------:|:------:|:-----------:|
 
-The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad cast with a net, but if you want more accuracy than you would need to use the other part of the scraper and scrape the stories page.
+The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad, cast with a net, but if you want more accuracy than you would need to use the other part of the scraper and scrape the stories page.
 
 ### Story Page
 
 The data gathered from here is organized like so:
 
-|title|author|genre|total_likes|status|release_day|views|subscribers|rating|chapter|likes|date| scrape_date|
-|:---:|:----:|:---:|:---------:|:----:|:---------:|:---:|:---------:|:----:|:-----:|:---:|:--:|:----------:|
+| title | author | genre | total_likes | status | release_day | views | subscribers | rating | chapter | likes | date | scrape_date |
+|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:|-------|-------------|--------|---------|-------|------|-------------|
 
-The `chapter_number`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
+The `chapter`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
 
 ## ScrapeToon Usage
 
@@ -30,17 +32,17 @@ The executable is stand alone and fully portable. Simply placing it in a folder 
 
 Once placed in a folder, simply right click in an empty part of the file explorer window and open the folder in a terminal.
 
-From there you just need to enter `.\scrapetoon.exe` on Windows, or `./srapetoon` on Linux and Mac.
+From there you just need to enter `.\scrapetoon.exe` on Windows, or `./scrapetoon` on Linux and Mac.
 
 Once there you then have the option of which source of data you want to scrape: `daily` or `story`.
 
 For example:
 
-```bash
+```shell
 .\scrapetoon.exe daily
 ```
 
-```bash
+```shell
 .\scrapetoon.exe story
 ```
 
@@ -48,17 +50,17 @@ For example:
 
 For example:
 
-```bash
+```shell
 .\scrapetoon.exe daily -o "D:\Desktop"
 ```
 
-```bash
+```shell
 .\scrapetoon.exe daily --output "D:\Desktop"
 ```
 
 `story` requires a bit more. Firstly a URL needs to be given after, with the flags `-u | --url`.
 
-```bash
+```shell
 .\scrapetoon.exe story --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154"
 ```
 
@@ -68,21 +70,21 @@ And secondly, it also requires a numerical value to be given for an `end`. This 
 
 In this case, if I want all pages, I enter 13
 
-```bash
+```shell
 .\scrapetoon.exe story -u "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" -e 13
 ```
 
-```bash
+```shell
 .\scrapetoon.exe story -url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end-page 13
 ```
 
 And same as before the `-o | --output` flag.
 
-```bash
+```shell
 .\scrapetoon.exe story -u "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" -e 13 -o "D:\Desktop"
 ```
 
-```bash
+```shell
 .\scrapetoon.exe story -url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end-page 13 --output "D:\Desktop"
 ```
 
@@ -146,8 +148,8 @@ No matter the story, there are things that can be shared between them no matter 
 
 As such, all data that is gotten as part of the [Story Page](#story-page) are included by default, along with the additions of:
 
-|comments|total_comments|user|comment_body|post_date|upvotes|downvotes|reply_count|
-|:------:|:------------:|:--:|:----------:|:-------:|:-----:|:-------:|:---------:|
+| comments | total_comments | user | comment_body | post_date | upvotes | downvotes | reply_count |
+|:--------:|:--------------:|:----:|:------------:|:---------:|:-------:|:---------:|:-----------:|
 
 The way the scraping is implemented will work for all stories, but later on in this example, you will see that this data isn't always functionally usable.
 
@@ -188,12 +190,14 @@ First step here is to copy the `tower-of-god` project folder and then rename it 
 In the newly renamed folder, open its `Cargo.toml` file and under the `[package]` section, edit the `name = ` to match the new folder name.
 
 From this:
+
 ```toml
 [package]
 name = "tower-of-god"
 ```
 
 To this:
+
 ```toml
 [package]
 name = "lore-olympus"
@@ -202,6 +206,7 @@ name = "lore-olympus"
 After that, open up the `Cargo.toml` file in the main directory, not the stories folder but in the base of the whole repo, and add the same folder name to the list.
 
 An example of what you could see:
+
 ```toml
 [workspace]
 
@@ -209,6 +214,7 @@ members = ["project_core", "line_core", "cli_core", "scrapetoon", "tower-of-god"
 ```
 
 Adding the name:
+
 ```toml
 [workspace]
 
@@ -262,15 +268,16 @@ This should fix those and set us up for the rest of the work we need to do.
 
 Next up is to open the `config.rs` file. As much as could be put in one spot for ease of access was put here. 
 
-You will notice some comments here but what's needed to be explained will be done so in this guide. 
+You will notice some comments here, but explanations will be done in this guide. 
 
 With all the comments stripped away, this is what we have.
+
 ```rust
 pub struct ChapterInfo {
-    
+
     pub season: u8,
     pub season_chapter: u16,
-    
+
     pub chapter_number: u16,
     pub comments: u32,
     pub likes: u32,
@@ -294,13 +301,13 @@ impl CommentSum for LinkedList<ChapterInfo> {
 }
 
 pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
-    
+
     filename: "tower-of-god",
 
     page_url: "https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95",
-    
+
     episode_url: "https://www.webtoons.com/en/fantasy/tower-of-god/season-3-ep-133/viewer?title_no=95&episode_no=",
-    
+
     episode_url_offset: 1,
 };
 
@@ -321,10 +328,10 @@ Let's go through each part and explain in detail.
 ```rust
 // Unchanged - Tower of God
 pub struct ChapterInfo {
-    
+
     pub season: u8,
     pub season_chapter: u16,
-    
+
     pub chapter_number: u16,
     pub comments: u32,
     pub likes: u32,
@@ -332,6 +339,7 @@ pub struct ChapterInfo {
     pub user_comments: LinkedList<UserComment>,
 }
 ```
+
 This struct is the data that will be scraped in addition to the other data mentioned before.
 
 I've put new lines in to block out an important thing. The `chapter_number`, `comments`, `likes`, `date`, and `user_comments` is something that will work in all story cases; you won't need to worry about messing with them.
@@ -345,10 +353,10 @@ For 'Lore Olympus', we have already determined that is has a season number and t
 ```rust
 // Lore Olympus
 pub struct ChapterInfo {
-    
+
     pub season: u8,
     pub meaningful_chapter_number: u16,
-    
+
     pub chapter_number: u16,
     pub comments: u32,
     pub likes: u32,
@@ -364,36 +372,37 @@ Note how we are still leaving the `chapter_number` alone. This is very important
 ```rust
 // Unchanged - Tower of God
 pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
-    
+
     filename: "tower-of-god",
 
     page_url: "https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95",
-    
+
     episode_url: "https://www.webtoons.com/en/fantasy/tower-of-god/season-3-ep-133/viewer?title_no=95&episode_no=",
-    
+
     episode_url_offset: 1,
 };
 ```
 
-`filename`: what the filename will be called. As part of a convention I am making, this will be the story same in its lowercase and hyphenated form.
+`filename`: what the filename will be called. As part of a convention I am making, this will be the story's name in its lowercase and hyphenated form. e.g. final output `lore-olympus.csv`.
 
 `page_url`: The URL of the story page. To note here, if you have changed pages but then go back to the first page to copy the url, be aware that there is an added `&page=<PAGE>` at the end. What we want to end on is `title_no=<ID>`, where ID is whatever Webtoon have given as an ID to the story.
 
 `episode_url`: The URL format when you are on a chapters/episode page. You can open any episode to get the url. The key here is that after pasting it in, you remove the numbers at the end of `&episode_no=<NUM>`. What you want the end to be is `&episode_no=`.
 
-`episode_url_offset`: When looking to see if the latest episode match up with the number in its URL, in the case we checked out `#230` and found that it did match, this is where the difference is offset. For example, if `#230` instead had a URL that ended in `231`, then we put a `1` for this value. In our case they were the same, so we just put a `0`.
+`episode_url_offset`: When looking to see if the latest episode matches up with the number in its URL, in the case we checked out `#230` and found that it did match, this is where the difference is offset. For example, if `#230` instead had a URL that ended in `231`, then we put a `1` for this value. In our case they were the same, so we just put a `0`.
 
 Here is the adapted version: 
+
 ```rust
 // Lore Olympus
 pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
-    
+
     filename: "lore-olympus",
 
     page_url: "https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320",
-    
+
     episode_url: "https://www.webtoons.com/en/romance/lore-olympus/episode-1/viewer?title_no=1320&episode_no=",
-    
+
     episode_url_offset: 0,
 };
 ```
@@ -405,17 +414,15 @@ To make a quick note at the start about this, the numbers given here are the URL
 And to connect to the previous section, if your `episode_url_offset` was not 0, then you will have to go through the chapters and find when the URL jumped ahead. As a rule of thumb, for every amount offset, there will be an equal number of values you have to give. This is a very important thing to get right as these numbers, when used in the URL, give back a page that will crash the program.
 
 In Tower of God the number `221` leads to a bad page, and thus needs to be skipped.
+
 ```rust
 // Unchanged - Tower of God
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
-    match chapter {
-        221 => true,
-        _ => false,
-    }
+        matches!(chapter, 221)
 };
 ```
 
-In our case we have no need to skip due to bad page loads, but we do have some misc. chapters we want to skip. We can see that we have 5 things to skip as that the difference between the `Episode <NUM>` and the `#<NUM>`.
+In our case, we have no need to skip due to bad page loads, but we do have some misc. chapters we want to skip. We can see that we have 5 things to skip as that is the difference between the `Episode <NUM>` and the `#<NUM>`.
 
 To be exact:
 `#13`: `Message and Concept Art`
@@ -424,7 +431,7 @@ To be exact:
 `#47`: `QnA`
 `#120`: `Season 1 Recap`
 
-And sense the `#<NUM>` matches up with the URL number, we can just use those same numbers here. It's important to note that this won't always be the case. 
+And since the `#<NUM>` matches up with the URL number, we can just use those same numbers here. It's important to note that this won't always be the case. 
 
 ```rust
 // Lore Olympus
@@ -434,6 +441,7 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
 ```
 
 Note: If the amount you are skipping becomes so long that it becomes unwieldy to put all in the `matches!` macro, you can use a match statement instead:
+
 ```rust
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
         match chapter {
@@ -455,11 +463,13 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
     false
 };
 ```
+
 ### lib.rs
 
 We need to change the data to match what we changed to in the `ChapterInfo` struct.
 
 In this section you might already be getting indicators about what we need to change. It tells us that there is no field named `season_chapter` on `ChapterInfo`. In our case we just need to change that to be our added `meaningful_chapter_number`.
+
 ```rust
 result.push_back({
             ChapterInfo {
@@ -474,13 +484,16 @@ result.push_back({
             })
 ```
 
-Now we get a new error though. There is no `meaningful_chapter_number` in scope. Just to get the compiling, we need to change a few things. First we need to change the now unused variable of `season_chapter` to `meaningful_chapter_number` and then also change part of the function name from `parse_season_chapter_number` to `parse_meaningful_chapter_number`
+Now we get a new error though. There is no `meaningful_chapter_number` in scope. Just to get it in a compiling state, we need to change a few things. First we need to change the now unused variable of `season_chapter` to `meaningful_chapter_number` and then also change part of the function name from `parse_season_chapter_number` to `parse_meaningful_chapter_number`
 
 From this:
+
 ```rust
 let season_chapter = story_specific_parsing::parse_season_chapter_number(&html);
 ```
+
 To this:
+
 ```rust
 let meaningful_chapter_number = story_specific_parsing::parse_meaningful_chapter_number(&html);
 ```
@@ -497,9 +510,9 @@ Given that 'Tower of God' also has a season number, we can simply adapt its impl
 
 ```rust
 pub fn parse_season_number(html: &Html) -> u8 {
-   
+
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
-    
+
     let regex = regex![r"Season\s(\d)"];
 
     let title = html
@@ -524,10 +537,13 @@ pub fn parse_season_number(html: &Html) -> u8 {
 ```
 
 `h1.subj_episode` corresponds to this section: The `(S3) Episode 225` in this case.
+
 ![](imgs/subj_episode_example.png)
 
 This is great, as it's the area that has the info we need. Not just for the season, but also the correct, meaningful, chapter number we saw would be a problem earlier, but that will be next.
+
 ##### Setup Testing
+
 First things first, to make the rest easy, we will go to a chapter, and once it's loaded, open up the dev tools of our browser. In Chrome, you can right-click and inspect. Then we need to get enter the selector tool and then click the `(S3) Episode <NUM>` part from above.
 
 ![](imgs/devtool_selector_tool.png)
@@ -555,15 +571,16 @@ Now near the bottom of the `story_specific_parsing.rs` file, you will see a test
     }
 ```
 
-you want to paste what you just copied in-between `r#"<PASTE_HERE>""#`.
+you want to paste what you just copied in-between `r#"<PASTE_HERE>"#`.
 
 You have something like this:
+
 ```rust
 const SEASON_NUMBER: &str = r#"<div class="subj_info">
-						<a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
-						<span class="ico_arr2"></span>
-						<h1 class="subj_episode" title="(S3) Episode 225">(S3) Episode 225</h1>
-					</div>"#;
+                        <a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
+                        <span class="ico_arr2"></span>
+                        <h1 class="subj_episode" title="(S3) Episode 225">(S3) Episode 225</h1>
+                    </div>"#;
 ```
 
 Now we can quickly test that what we are doing works.
@@ -578,7 +595,7 @@ To get our season number, we first need to have the regex match our pattern of `
 
 If you don't know regex, and even if you do, this can be super confusing. But basically we have a pattern that matched `(S<DIGIT>)` and we are capturing the digits value.
 
-Doing a test shows that it passes. But we have a problem here, as we saw earlier, there is no `(S1)` for those chapters. If you copied an element that that was from Season 1, you may and tested, it will have failed.
+Doing a test shows that it passes. But we have a problem here, as we saw earlier, there is no `(S1)` for those chapters. If you copied an element that was from Season 1, and tested, it will have failed.
 
 For those who didn't use a chapter from Season 1, go now and copy an element the same as before and in the test function, copy the `SEASON_NUMBER`, `html`, `season_number`, and `result`. It will be simple enough to just add a 2 at the end of the variable name.
 
@@ -586,16 +603,16 @@ For those who didn't use a chapter from Season 1, go now and copy an element the
     #[test]
     fn should_parse_season_number() {
         const SEASON_NUMBER: &str = r#"<div class="subj_info">
-						<a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
-						<span class="ico_arr2"></span>
-						<h1 class="subj_episode" title="(S3) Episode 225">(S3) Episode 225</h1>
-					</div>"#;
+                        <a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
+                        <span class="ico_arr2"></span>
+                        <h1 class="subj_episode" title="(S3) Episode 225">(S3) Episode 225</h1>
+                    </div>"#;
 
         const SEASON_NUMBER2: &str = r#"<div class="subj_info">
-						<a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
-						<span class="ico_arr2"></span>
-						<h1 class="subj_episode" title="Episode 1">Episode 1</h1>
-					</div>"#;
+                        <a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
+                        <span class="ico_arr2"></span>
+                        <h1 class="subj_episode" title="Episode 1">Episode 1</h1>
+                    </div>"#;
 
         let html = Html::parse_document(SEASON_NUMBER);
         let html2 = Html::parse_document(SEASON_NUMBER2);
@@ -613,9 +630,9 @@ Running the test again will fail as there is no `(S1)`.
 ```rust
 let season = regex
         .captures(title)
-        
+
         .unwrap()
-        
+
         .get(1)
         .unwrap()
         .as_str()
@@ -628,6 +645,7 @@ The problem is the first unwrap(). In our case it's a pretty simple solution; we
 I will note that because we have skipped any other content that would not have a `(S<DIGIT>)`, all that other misc. content, we are left with a situation where all that would be an issue are the real Season 1 Episodes. We can just default to returning `1` because of that. This won't always be the case. If you have a complex task and need help, open an issue and I will try my best to help.
 
 Here is our simple solution.
+
 ```rust
 let season = match regex
         .captures(title) {
@@ -674,11 +692,13 @@ And that's really all we need to do here.
 First up in this file is the rest of the cleanup from the project change. Just like before just change the name to the new project name.
 
 From this: 
+
 ```rust
 use tower_of_god::config::{ChapterInfo, CommentSum};
 ```
 
 To this:
+
 ```rust
 use lore_olympus::config::{ChapterInfo, CommentSum};
 ```
@@ -714,15 +734,18 @@ writer.write_record([
         ])
 ```
 
-From this list, we can leave most things alone. The main thing being that there is no `season_chapter`. We can choose to just replace this with the `meaningful_chapter_number`, leaving the `chapter` column alone, but as that field is what the `meaningful_chapter_number` is supposed to represent, we will just remove the `season_chapter` part and then in the `chapter` assignment, use the new data.
+From this list, we can leave most things alone. The main thing being that there is no `season_chapter`. We can choose to just replace this with the `meaningful_chapter_number`, leaving the `chapter` column alone, but as that field is what the `meaningful_chapter_number` is supposed to represent, we will just remove the `season_chapter` part. We will leave `chapter` alone here, solving the problem a little below.
 
 Going down below this part, we need to change the variable name to match the new expectation, as well as reference the new field.
 
 From this:
+
 ```rust
 let season_chapter = chapter.season_chapter.to_string();
 ```
+
 To this:
+
 ```rust
 let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
 ```
@@ -796,16 +819,17 @@ To remove the unused code warning, we can simply comment out the unused `chapter
 
 ## Conclusion
 
-And with that, we are done. Having had hindsight when writing this up, all of what we did id confirmed to work. But in your case, you should test and run the app to make sure it works as expected.
+And with that, we are done. Having had hindsight when writing this up, all of what we did is confirmed to work. But in your case, you should test and run the app to make sure it works as expected.
 
 # Contribution
 
 If you want to contribute, first of all, thank you, communities can only grow with effort. Small projects like these, for niches like Webtoons, really goes a long way in adding some depth and quality.
 
-Contributing are pretty simple. For all instances, open a branch with a name that signifies the hopeful contribution, and then make whatever change you wanted, then begin the pull request process.
+Contributing are pretty simple. For all instances, open a branch with a name that signifies the hopeful contribution, and then make whatever change you wanted, then begin the pull request process. And please squash the commits to just one on merge.
 
 ## Rust
-For changes to rust based files, open up an issue first. That way if you have any question that crop up, the issue can be used to talk through things. Upon pull request, reference the issue. 
+
+For changes to rust based files, open up an issue first. That way if you have any questions that crop up, the issue can be used to talk through things. Upon pull request, reference the issue. 
 
 Must fix most warning that pop up with:
 
