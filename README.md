@@ -1,6 +1,14 @@
 <h1 style="text-align: center;">ScrapeToon</h1>
 
-A tool for scraping information from [Webtoons](https://www.webtoons.com/).
+<p align="center">
+  <img src="imgs/scrapetoon_logo.png" alt="Guided by Fate" height="300"/>
+</p>
+
+<p align="center">
+  A tool for scraping information from <a href="https://www.webtoons.com">Webtoons</a>
+</p>
+
+<br/>
 
 There is a generic tool, `scrapetoon`, that gets Daily Schedule information as well as Story Page information. In addition to this are story specialized projects that get the same info as the Story Page, but also things like comments.
 
