@@ -60,9 +60,7 @@ type Skip = fn(u16) -> bool;
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
     // Add the url number that you need to skip here and return true.
     // For first test run this should always return false. There may not be a need to skip anything.
-    match chapter {
-        // The URl no=221 for chapter 221 is a 404. No=222 is where #221 is.
-        221 => true,
-        _ => false,
-    }
+
+    // The URl no=221 for chapter 221 is a 404. No=222 is where #221 is.
+    matches!(chapter, 221)
 };
