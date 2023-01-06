@@ -42,20 +42,8 @@ pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
 type Skip = fn(u16) -> bool;
 
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
-    match chapter {
-        1 => true,
-        37 => true,
-        48 => true,
-        80 => true,
-        81 => true,
-        82 => true,
-        162 => true,
-        163 => true,
-        164 => true,
-        165 => true,
-        166 => true,
-        246 => true,
-        247 => true,
-        _ => false,
-    }
+    matches!(
+        chapter,
+        1 | 37 | 48 | 80 | 81 | 82 | 162 | 163 | 164 | 165 | 166 | 246 | 247
+    )
 };
