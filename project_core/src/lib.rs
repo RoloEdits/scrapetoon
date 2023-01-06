@@ -1,7 +1,8 @@
 use chrono::Utc;
 use core::time;
 use reqwest::{Error, Response};
-use std::{env, fs, thread};
+use std::{fs, thread};
+use std::path::Path;
 
 pub mod regex;
 pub struct ResponseFactory {}
@@ -36,33 +37,6 @@ impl ResponseFactory {
     }
 }
 
-#[must_use]
-pub fn create_date_folder(filepath: &str) -> String {
-    let mut final_path = filepath;
-
-    // Equalizes all paths so that an operation to add slashes can be done without worry of doubling up.
-    if final_path.ends_with('/') || final_path.ends_with('\\') {
-        let remove_last_index = final_path.len() - 1;
-        final_path = &final_path[..remove_last_index];
-    }
-
-    let date_now = Utc::now().date_naive();
-    let date_path = if env::consts::OS == "windows" {
-        format!("{final_path}\\{date_now}\\")
-    } else {
-        format!("{final_path}/{date_now}/")
-    };
-    // if directory exists, do nothing. else create.
-    if fs::create_dir(&date_path).is_ok() {};
-
-    date_path
-}
-
-#[must_use]
-pub fn get_current_utc_date() -> String {
-    Utc::now().date_naive().to_string()
-}
-
 pub struct SeriesConfiguration<'a> {
     pub filename: &'a str,
     pub page_url: &'a str,
@@ -71,16 +45,64 @@ pub struct SeriesConfiguration<'a> {
 }
 
 #[must_use]
-pub fn validate_output_path_ends_correctly(path: &str) -> String {
-    if path.ends_with('\\') || path.ends_with('/') {
-        return path.to_string();
+pub fn get_current_utc_date() -> String {
+    Utc::now().date_naive().to_string()
+}
+
+#[must_use]
+pub fn create_date_folder(filepath: &str) -> String {
+
+    let path = Path::new(filepath);
+
+    let date_now = get_current_utc_date();
+
+    let date_path = path.join(date_now)
+        .into_os_string()
+        .into_string()
+        .expect("date_path");
+
+    fs::create_dir(&date_path).expect("Create date folder");
+
+    date_path
+}
+
+#[must_use]
+pub fn enforce_path_exists(filepath: &str) -> String {
+
+    let path = Path::new(filepath);
+
+    if !path.try_exists().expect("Check if given path exists"){
+        fs::create_dir(path).expect("Create given path so it's existence is enforced");
     }
 
-    let new_path = if env::consts::OS == "windows" {
-        format!("{path}\\")
-    } else {
-        format!("{path}/")
-    };
+    filepath.to_string()
+}
 
-    new_path
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // TODO: Need to mock
+
+    #[test]
+    fn should_create_date_folder() {
+        let given_path = r"D:\temp";
+
+        let date = get_current_utc_date();
+
+        let result = create_date_folder(given_path);
+
+        let test = format!("{given_path}\\{date}");
+
+        assert_eq!(result, test);
+    }
+
+    #[test]
+    fn should_create_valid_folder() {
+        let given_path = r"D:\temp\temp";
+
+        let result = enforce_path_exists(given_path);
+
+        assert_eq!(result, given_path);
+    }
 }

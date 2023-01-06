@@ -1,6 +1,6 @@
 use clap::Parser;
 use cli_core::StoryCliArgs;
-use project_core::validate_output_path_ends_correctly;
+use project_core::enforce_path_exists;
 use the_god_of_high_school::config;
 
 mod csv;
@@ -19,7 +19,7 @@ async fn main() {
     .await;
 
     csv::write(
-        &validate_output_path_ends_correctly(&args.output),
+        &enforce_path_exists(&args.output),
         &parsed_chapters,
         &series_info,
         config::CONFIG.filename,

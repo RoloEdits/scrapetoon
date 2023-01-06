@@ -1,7 +1,7 @@
 use clap::Parser;
 use cli_core::StoryCliArgs;
 use lore_olympus::config;
-use project_core::validate_output_path_ends_correctly;
+use project_core::enforce_path_exists;
 
 mod csv;
 
@@ -19,7 +19,7 @@ async fn main() {
     .await;
 
     csv::write(
-        &validate_output_path_ends_correctly(&args.output),
+        &enforce_path_exists(&args.output),
         &parsed_chapters,
         &series_info,
         config::CONFIG.filename,
