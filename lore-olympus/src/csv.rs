@@ -12,41 +12,41 @@ pub fn write(
     let csv_name = format!("{filename}.csv");
     let mut writer = csv::Writer::from_path(path.join(csv_name)).unwrap();
 
+    let header = [
+        "title",
+        "author",
+        "genre",
+        "status",
+        "release_day",
+        "views",
+        "subscribers",
+        "rating",
+        "chapter",
+        "chapter_length",
+        "comments",
+        "total_comments",
+        "likes",
+        "total_likes",
+        "date",
+        "user",
+        "comment_body",
+        "post_date",
+        "upvotes",
+        "downvotes",
+        "reply_count",
+        "scrape_date",
+        "season",
+    ];
+
     writer
-        // The resulting data columns. Tweak as needed.
-        .write_record([
-            // Works for all stories
-            "title",
-            "author",
-            "genre",
-            "status",
-            "release_day",
-            "views",
-            "subscribers",
-            "rating",
-            "chapter",
-            "chapter_length",
-            "comments",
-            "total_comments",
-            "likes",
-            "total_likes",
-            "date",
-            "user",
-            "comment_body",
-            "post_date",
-            "upvotes",
-            "downvotes",
-            "reply_count",
-            "scrape_date",
-            "season",
-        ])
+        .write_record(header)
         .expect("Couldn't write to file.");
 
-    let title = series_info.title.clone();
-    let author = series_info.author.clone();
-    let genre = series_info.genre.clone();
-    let status = series_info.status.clone();
-    let release_day = series_info.release_day.clone();
+    let title = series_info.title.as_str();
+    let author = series_info.author.as_str();
+    let genre = series_info.genre.as_str();
+    let status = series_info.status.as_str();
+    let release_day = series_info.release_day.as_str();
     let views = series_info.views.to_string();
     let subscribers = series_info.subscribers.to_string();
     let rating = series_info.rating.to_string();
@@ -60,44 +60,46 @@ pub fn write(
         // let chapter_number = chapter.chapter_number.to_string();
         let comments = chapter.comments.to_string();
         let likes = chapter.likes.to_string();
-        let date = chapter.date.clone();
+        let date = chapter.date.as_str();
         let chapter_length = chapter.chapter_length.to_string();
         let current_utc_date = project_core::get_current_utc_date();
 
         for comment in &chapter.user_comments {
-            let user = comment.user.clone();
-            let comment_body = comment.body.clone();
-            let post_date = comment.post_date.clone();
+            let user = comment.user.as_str();
+            let comment_body = comment.body.as_str();
+            let post_date = comment.post_date.as_str();
             let upvotes = comment.upvotes.to_string();
             let downvotes = comment.downvotes.to_string();
             let reply_count = comment.reply_count.to_string();
 
+            let record_body = [
+                title,
+                author,
+                genre,
+                status,
+                release_day,
+                &views,
+                &subscribers,
+                &rating,
+                &meaningful_chapter_number,
+                &chapter_length,
+                &comments,
+                &total_comments,
+                &likes,
+                &total_likes,
+                date,
+                user,
+                comment_body,
+                post_date,
+                &upvotes,
+                &downvotes,
+                &reply_count,
+                &current_utc_date,
+                &season,
+            ];
+
             writer
-                .write_record([
-                    &title,
-                    &author,
-                    &genre,
-                    &status,
-                    &release_day,
-                    &views,
-                    &subscribers,
-                    &rating,
-                    &meaningful_chapter_number,
-                    &chapter_length,
-                    &comments,
-                    &total_comments,
-                    &likes,
-                    &total_likes,
-                    &date,
-                    &user,
-                    &comment_body,
-                    &post_date,
-                    &upvotes,
-                    &downvotes,
-                    &reply_count,
-                    &current_utc_date,
-                    &season,
-                ])
+                .write_record(record_body)
                 .expect("Couldn't write to file.");
         }
     }

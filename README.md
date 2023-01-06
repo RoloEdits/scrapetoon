@@ -450,21 +450,6 @@ pub const TO_SKIP: Skip = |chapter: u16| -> bool {
 };
 ```
 
-Note: If the amount you are skipping becomes so long that it becomes unwieldy to put all in the `matches!` macro, you can use a match statement instead:
-
-```rust
-pub const TO_SKIP: Skip = |chapter: u16| -> bool {
-        match chapter {
-            13 => true,
-            18 => true,
-            31 => true,
-            47 => true,
-            120 => true,
-            _ => false
-        }
-};
-```
-
 If you have nothing to skip, you can simply just return `false`
 
 ```rust
@@ -842,7 +827,7 @@ And with that, we are done. Having had hindsight when writing this up, all of wh
 
 If you want to contribute, first of all, thank you, communities can only grow with effort. Small projects like these, for niches like Webtoons, really goes a long way in adding some depth and quality.
 
-Contributing are pretty simple. For all instances, open a branch with a name that signifies the hopeful contribution, and then make whatever change you wanted, then begin the pull request process. And please squash the commits to just one on merge.
+Contributing are pretty simple. For all instances, open a branch with a name that signifies the hopeful contribution, and then make whatever change you wanted, then begin the pull request process.
 
 ## Rust
 
