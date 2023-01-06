@@ -1,8 +1,8 @@
 use chrono::Utc;
 use core::time;
 use reqwest::{Error, Response};
-use std::{fs, thread};
 use std::path::Path;
+use std::{fs, thread};
 
 pub mod regex;
 pub struct ResponseFactory {}
@@ -51,12 +51,12 @@ pub fn get_current_utc_date() -> String {
 
 #[must_use]
 pub fn create_date_folder(filepath: &str) -> String {
-
     let path = Path::new(filepath);
 
     let date_now = get_current_utc_date();
 
-    let date_path = path.join(date_now)
+    let date_path = path
+        .join(date_now)
         .into_os_string()
         .into_string()
         .expect("date_path");
@@ -68,10 +68,9 @@ pub fn create_date_folder(filepath: &str) -> String {
 // TODO: Handle end of path demarcation
 #[must_use]
 pub fn path_enforcer(filepath: &str) -> String {
-
     let path = Path::new(filepath);
 
-    if !path.try_exists().expect("Check if given path exists"){
+    if !path.try_exists().expect("Check if given path exists") {
         fs::create_dir(path).expect("Create given path so it's existence is enforced");
     }
 

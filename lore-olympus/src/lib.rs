@@ -1,6 +1,6 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{comments, series_info, LikesDate, SeriesInfo, chapter_height_pixels};
+use line_core::{chapter_height_pixels, comments, series_info, LikesDate, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
 use std::{
@@ -88,7 +88,7 @@ pub async fn parse_chapters(
 
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
         let user_comments = comments::parse_users(&html);
-        let chapter_length= chapter_height_pixels::from(&html);
+        let chapter_length = chapter_height_pixels::from(&html);
 
         result.push_back({
             ChapterInfo {

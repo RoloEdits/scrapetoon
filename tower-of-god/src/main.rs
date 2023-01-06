@@ -15,7 +15,8 @@ async fn main() {
         args.pages,
         &config::CONFIG,
         config::TO_SKIP,
-    ).await;
+    )
+    .await;
 
     csv::write(
         &path_enforcer(&args.output),
@@ -23,5 +24,4 @@ async fn main() {
         &series_info,
         config::CONFIG.filename,
     );
-
 }

@@ -76,8 +76,7 @@ pub async fn parse_chapters(
             .clone();
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
         let comments = comments::parse_users(&html);
-        let chapter_length= chapter_height_pixels::from(&html);
-
+        let chapter_length = chapter_height_pixels::from(&html);
 
         result.push_back({
             ChapterInfo {
