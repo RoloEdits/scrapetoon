@@ -19,7 +19,7 @@ async fn main() {
     .await;
 
     csv::write(
-        &path_enforcer(&args.output),
+        path_enforcer(&args.output),
         &parsed_chapters,
         &series_info,
         config::CONFIG.filename,

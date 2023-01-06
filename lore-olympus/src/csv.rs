@@ -1,7 +1,7 @@
-use std::collections::LinkedList;
-use std::path::Path;
 use line_core::SeriesInfo;
 use lore_olympus::config::{ChapterInfo, CommentSum};
+use std::collections::LinkedList;
+use std::path::Path;
 
 pub fn write(
     path: &Path,

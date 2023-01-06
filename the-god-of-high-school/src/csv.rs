@@ -1,6 +1,6 @@
+use line_core::SeriesInfo;
 use std::collections::LinkedList;
 use std::path::Path;
-use line_core::SeriesInfo;
 use the_god_of_high_school::config::{ChapterInfo, CommentSum};
 
 pub fn write(

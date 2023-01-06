@@ -1,6 +1,6 @@
+use line_core::SeriesInfo;
 use std::collections::LinkedList;
 use std::path::Path;
-use line_core::SeriesInfo;
 use tower_of_god::config::{ChapterInfo, CommentSum};
 
 pub fn write(
