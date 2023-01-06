@@ -5,7 +5,6 @@ use scraper::{Html, Selector};
 /// Will panic if there are no images.
 #[must_use]
 pub fn from(html: &Html) -> u32 {
-
     let image_selector = Selector::parse("img._images").unwrap();
 
     let mut pixels_height = 0.0;
@@ -30,7 +29,6 @@ mod parse_chapter_length {
 
     #[test]
     fn should_parse_chapter_length_in_pixels() {
-
         const IMAGE_LIST: &str = r##"<div class="viewer_img _img_viewer_area " id="_imageList">
 
 	<img src="https://webtoon-phinf.pstatic.net/20200328_233/1585335417410FLscc_JPEG/15853354143659521.jpg?type=q90"
