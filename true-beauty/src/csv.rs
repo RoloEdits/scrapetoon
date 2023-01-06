@@ -1,16 +1,16 @@
 use std::collections::LinkedList;
-
+use std::path::Path;
 use line_core::SeriesInfo;
 use true_beauty::config::{ChapterInfo, CommentSum};
 
 pub fn write(
-    path: &str,
+    path: &Path,
     chapter_info: &LinkedList<ChapterInfo>,
     series_info: &SeriesInfo,
     filename: &str,
 ) {
-    let final_path = format!("{path}{filename}.csv");
-    let mut writer = csv::Writer::from_path(final_path).unwrap();
+    let csv_name = format!("{filename}.csv");
+    let mut writer = csv::Writer::from_path(path.join(csv_name)).unwrap();
 
     writer
         .write_record([

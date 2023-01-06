@@ -65,16 +65,16 @@ pub fn create_date_folder(filepath: &str) -> String {
 
     date_path
 }
-// TODO: Handle end of path demarcation
+
 #[must_use]
-pub fn path_enforcer(filepath: &str) -> String {
+pub fn path_enforcer(filepath: &str) -> &Path {
     let path = Path::new(filepath);
 
     if !path.try_exists().expect("Check if given path exists") {
         fs::create_dir(path).expect("Create given path so it's existence is enforced");
     }
 
-    filepath.to_string()
+    path
 }
 
 // #[cfg(test)]
