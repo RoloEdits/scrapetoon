@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["project_core", "line_core", "cli_core", "scrapetoon", "tower-of-god", "true-beauty", "the-god-of-high-school", "lore-olympus"]
+members = ["project_core", "line_core", "cli_core", "scrapetoon", "tower-of-god", "true-beauty", "the-god-of-high-school", "lore-olympus", "unordinary"]
 
 [workspace.dependencies]
 clap = {version = "4.0.25", features = ["derive"]}
