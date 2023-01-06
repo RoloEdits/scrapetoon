@@ -156,8 +156,8 @@ No matter the story, there are things that can be shared between them no matter 
 
 As such, all data that is gotten as part of the [Story Page](#story-page) are included by default, along with the additions of:
 
-| comments | total_comments | user | comment_body | post_date | upvotes | downvotes | reply_count |
-|:--------:|:--------------:|:----:|:------------:|:---------:|:-------:|:---------:|:-----------:|
+| chapter_length | comments | total_comments | user | comment_body | post_date | upvotes | downvotes | reply_count |
+|----------------|:--------:|:--------------:|:----:|:------------:|:---------:|:-------:|:---------:|:-----------:|
 
 The way the scraping is implemented will work for all stories, but later on in this example, you will see that this data isn't always functionally usable.
 
@@ -258,8 +258,7 @@ async fn main() {
         args.pages,
         &config::CONFIG,
         config::TO_SKIP,
-    )
-        .await;
+    ).await;
 
     csv::write(
         &args.output,
@@ -291,6 +290,7 @@ pub struct ChapterInfo {
     pub likes: u32,
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
+    pub chapter_length: u32,
 }
 
 pub trait CommentSum {
@@ -345,6 +345,7 @@ pub struct ChapterInfo {
     pub likes: u32,
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
+    pub chapter_length: u32,
 }
 ```
 
@@ -370,6 +371,7 @@ pub struct ChapterInfo {
     pub likes: u32,
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
+    pub chapter_length: u32,
 }
 ```
 
@@ -489,6 +491,7 @@ result.push_back({
                 likes,
                 date,
                 user_comments,
+                chapter_length,
             })
 ```
 
@@ -724,6 +727,7 @@ writer.write_record([
             "subscribers",
             "rating",
             "chapter",
+            "chapter_length",
             "comments",
             "total_comments",
             "likes",
@@ -772,6 +776,7 @@ writer
             &subscribers,
             &rating,
             &chapter_number,
+            &chapter_length,
             &comments,
             &total_comments,
             &likes,
@@ -803,6 +808,7 @@ writer
             &subscribers,
             &rating,
             &meaningful_chapter_number,
+            &chapter_length,
             &comments,
             &total_comments,
             &likes,
@@ -824,6 +830,9 @@ To remove the unused code warning, we can simply comment out the unused `chapter
 ```rust
 // let chapter_number = chapter.chapter_number.to_string();
 ```
+### README.md
+
+All that's left is to edit the `README.md` to match the name of the story and the data format. 
 
 ## Conclusion
 

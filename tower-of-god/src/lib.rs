@@ -1,6 +1,6 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{comments, series_info, LikesDate, SeriesInfo};
+use line_core::{comments, series_info, LikesDate, SeriesInfo, chapter_height_pixels};
 use project_core::SeriesConfiguration;
 use scraper::Html;
 use std::{
@@ -17,6 +17,10 @@ mod story_specific_parsing;
 /// # Panics
 ///
 /// Will panic if `ChromeDriver` isn't running
+///
+/// # Errors
+///
+/// Returns a tuple if Ok and if there is any progress made, else returns a `WebDriver` error.
 pub async fn parse_chapters(
     start: u16,
     end: u16,
@@ -87,6 +91,7 @@ pub async fn parse_chapters(
 
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
         let user_comments = comments::parse_users(&html);
+        let chapter_length= chapter_height_pixels::from(&html);
 
         result.push_back({
             ChapterInfo {
@@ -98,6 +103,7 @@ pub async fn parse_chapters(
                 likes,
                 date,
                 user_comments,
+                chapter_length
             }
         });
     }
@@ -108,12 +114,11 @@ pub async fn parse_chapters(
 }
 
 async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
-    // let mut chapter_info_list: LinkedList<ChapterListInfo> = LinkedList::new();
+
     println!("Pre-Fetching Necessary Data");
 
     let series_info = series_info::parse(pages, url).await;
 
-    // parse_chapter_list::parse_chapter_list_pages(pages, url, &mut chapter_info_list).await;
     println!("Completed Pre-Fetch");
 
     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();

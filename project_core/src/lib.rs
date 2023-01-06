@@ -65,9 +65,9 @@ pub fn create_date_folder(filepath: &str) -> String {
 
     date_path
 }
-
+// TODO: Handle end of path demarcation
 #[must_use]
-pub fn enforce_path_exists(filepath: &str) -> String {
+pub fn path_enforcer(filepath: &str) -> String {
 
     let path = Path::new(filepath);
 
@@ -101,7 +101,7 @@ mod tests {
     fn should_create_valid_folder() {
         let given_path = r"D:\temp\temp";
 
-        let result = enforce_path_exists(given_path);
+        let result = path_enforcer(given_path);
 
         assert_eq!(result, given_path);
     }
