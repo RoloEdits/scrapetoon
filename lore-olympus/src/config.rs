@@ -12,6 +12,7 @@ pub struct ChapterInfo {
     pub likes: u32,
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
+    pub chapter_length: u32,
 }
 
 pub trait CommentSum {

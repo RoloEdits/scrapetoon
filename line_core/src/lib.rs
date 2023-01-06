@@ -1,3 +1,4 @@
+pub mod chapter_height_pixels;
 pub mod chapter_list;
 pub mod comments;
 pub mod daily_schedule;

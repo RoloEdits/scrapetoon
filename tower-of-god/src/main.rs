@@ -1,6 +1,6 @@
 use clap::Parser;
 use cli_core::StoryCliArgs;
-use project_core::enforce_path_exists;
+use project_core::path_enforcer;
 use tower_of_god::config;
 
 mod csv;
@@ -19,7 +19,7 @@ async fn main() {
     .await;
 
     csv::write(
-        &enforce_path_exists(&args.output),
+        &path_enforcer(&args.output),
         &parsed_chapters,
         &series_info,
         config::CONFIG.filename,

@@ -23,6 +23,7 @@ pub fn write(
             "subscribers",
             "rating",
             "chapter",
+            "chapter_length",
             "comments",
             "total_comments",
             "likes",
@@ -54,6 +55,7 @@ pub fn write(
         let comments = chapter.comments.to_string();
         let likes = chapter.likes.to_string();
         let date = chapter.date.clone();
+        let chapter_length = chapter.chapter_length.to_string();
 
         let current_utc_date = project_core::get_current_utc_date();
 
@@ -76,6 +78,7 @@ pub fn write(
                     &subscribers,
                     &rating,
                     &chapter_number,
+                    &chapter_length,
                     &comments,
                     &total_comments,
                     &likes,

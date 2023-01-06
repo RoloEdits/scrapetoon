@@ -1,6 +1,6 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::LikesDate;
+use line_core::{chapter_height_pixels, LikesDate};
 use line_core::{comments, series_info, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
@@ -76,6 +76,7 @@ pub async fn parse_chapters(
             .clone();
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
         let comments = comments::parse_users(&html);
+        let chapter_length = chapter_height_pixels::from(&html);
 
         result.push_back({
             ChapterInfo {
@@ -84,6 +85,7 @@ pub async fn parse_chapters(
                 likes,
                 date,
                 user_comments: comments,
+                chapter_length,
             }
         });
     }
@@ -93,6 +95,7 @@ pub async fn parse_chapters(
     (series_info, result)
 }
 
+// TODO: Centralize to avoid duplication
 async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
     println!("Pre-Fetching Necessary Data");
     let series_info = series_info::parse(pages, url).await;

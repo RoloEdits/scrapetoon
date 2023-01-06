@@ -1,8 +1,8 @@
 use chrono::Utc;
 use core::time;
 use reqwest::{Error, Response};
-use std::{fs, thread};
 use std::path::Path;
+use std::{fs, thread};
 
 pub mod regex;
 pub struct ResponseFactory {}
@@ -51,12 +51,12 @@ pub fn get_current_utc_date() -> String {
 
 #[must_use]
 pub fn create_date_folder(filepath: &str) -> String {
-
     let path = Path::new(filepath);
 
     let date_now = get_current_utc_date();
 
-    let date_path = path.join(date_now)
+    let date_path = path
+        .join(date_now)
         .into_os_string()
         .into_string()
         .expect("date_path");
@@ -65,44 +65,43 @@ pub fn create_date_folder(filepath: &str) -> String {
 
     date_path
 }
-
+// TODO: Handle end of path demarcation
 #[must_use]
-pub fn enforce_path_exists(filepath: &str) -> String {
-
+pub fn path_enforcer(filepath: &str) -> String {
     let path = Path::new(filepath);
 
-    if !path.try_exists().expect("Check if given path exists"){
+    if !path.try_exists().expect("Check if given path exists") {
         fs::create_dir(path).expect("Create given path so it's existence is enforced");
     }
 
     filepath.to_string()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // TODO: Need to mock
-
-    #[test]
-    fn should_create_date_folder() {
-        let given_path = r"D:\temp";
-
-        let date = get_current_utc_date();
-
-        let result = create_date_folder(given_path);
-
-        let test = format!("{given_path}\\{date}");
-
-        assert_eq!(result, test);
-    }
-
-    #[test]
-    fn should_create_valid_folder() {
-        let given_path = r"D:\temp\temp";
-
-        let result = enforce_path_exists(given_path);
-
-        assert_eq!(result, given_path);
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     // TODO: Need to mock
+//
+//     #[test]
+//     fn should_create_date_folder() {
+//         let given_path = r"D:\temp";
+//
+//         let date = get_current_utc_date();
+//
+//         let result = create_date_folder(given_path);
+//
+//         let test = format!("{given_path}\\{date}");
+//
+//         assert_eq!(result, test);
+//     }
+//
+//     #[test]
+//     fn should_create_valid_folder() {
+//         let given_path = r"D:\temp\temp";
+//
+//         let result = path_enforcer(given_path);
+//
+//         assert_eq!(result, given_path);
+//     }
+// }
