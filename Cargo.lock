@@ -818,6 +818,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "kubera"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "cli_core",
+ "csv",
+ "line_core",
+ "project_core",
+ "regex",
+ "scraper",
+ "static_assertions",
+ "thirtyfour",
+ "tokio",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
