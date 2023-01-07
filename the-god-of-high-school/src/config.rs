@@ -40,4 +40,5 @@ pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
 
 type Skip = fn(u16) -> bool;
 
+// TODO: Skip #204 and #309. Need to change to meaningful chapter number too.
 pub const TO_SKIP: Skip = |chapter: u16| -> bool { matches!(chapter, 249) };
