@@ -36,8 +36,10 @@ pub async fn parse_chapters(
 
     println!("Parsing Chapters..");
 
+    let mut skips = 0;
     for chapter in start..=end + config.episode_url_offset {
         if need_to_skip(chapter) {
+            skips += 1;
             continue;
         }
 
@@ -67,7 +69,7 @@ pub async fn parse_chapters(
 
         let html = Html::parse_document(&driver.source().await.unwrap());
 
-        let chapter_number = comments::parse_chapter_number(&html);
+        let chapter_number = chapter - skips;
         let comment_count = comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
             .get(&chapter_number)

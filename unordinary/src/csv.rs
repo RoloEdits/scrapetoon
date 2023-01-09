@@ -55,7 +55,7 @@ pub fn write(
     let total_likes = series_info.sum_total_likes().to_string();
 
     for chapter in chapter_info {
-        let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
+        let chapter_number = chapter.chapter_number.to_string();
 
         // let chapter_number = chapter.chapter_number.to_string();
         let comments = chapter.comments.to_string();
@@ -81,7 +81,7 @@ pub fn write(
                 &views,
                 &subscribers,
                 &rating,
-                &meaningful_chapter_number,
+                &chapter_number,
                 &chapter_length,
                 &comments,
                 &total_comments,

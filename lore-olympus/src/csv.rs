@@ -55,7 +55,8 @@ pub fn write(
 
     for chapter in chapter_info {
         let season = chapter.season.to_string();
-        let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
+        // let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
+        let chapter_number = chapter.chapter_number.to_string();
 
         // let chapter_number = chapter.chapter_number.to_string();
         let comments = chapter.comments.to_string();
@@ -81,7 +82,7 @@ pub fn write(
                 &views,
                 &subscribers,
                 &rating,
-                &meaningful_chapter_number,
+                &chapter_number,
                 &chapter_length,
                 &comments,
                 &total_comments,
