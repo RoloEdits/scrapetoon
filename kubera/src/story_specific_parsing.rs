@@ -71,21 +71,21 @@ pub fn parse_arc_title(html: &Html) -> String {
     arc_title.trim().to_string()
 }
 
-pub const fn chapter_number_correction(chapter_number: u16) -> u16 {
-    if chapter_number > 285 {
-        return chapter_number - 4;
-    }
-
-    if chapter_number > 267 {
-        return chapter_number - 2;
-    }
-
-    if chapter_number > 102 {
-        return chapter_number - 1;
-    }
-
-    chapter_number
-}
+// pub const fn chapter_number_correction(chapter_number: u16) -> u16 {
+//     if chapter_number > 285 {
+//         return chapter_number - 4;
+//     }
+//
+//     if chapter_number > 267 {
+//         return chapter_number - 2;
+//     }
+//
+//     if chapter_number > 102 {
+//         return chapter_number - 1;
+//     }
+//
+//     chapter_number
+// }
 
 #[cfg(test)]
 mod tests {

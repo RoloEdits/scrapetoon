@@ -29,7 +29,8 @@ pub async fn parse_chapters(
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
 ) -> (SeriesInfo, LinkedList<ChapterInfo>) {
-    let (series_info, chapter_likes_date_map) = get_series_info(pages, config.page_url).await;
+    let (series_info, chapter_likes_date_map) =
+        line_core::series_info::get_extra_info(pages, config.page_url).await;
 
     let capabilities = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", capabilities)
@@ -42,10 +43,12 @@ pub async fn parse_chapters(
 
     println!("Parsing Chapters..");
 
+    let mut skips = 0;
     for chapter in start..=end + config.episode_url_offset {
         bar.inc(1);
 
         if need_to_skip(chapter) {
+            skips += 1;
             continue;
         }
 
@@ -82,7 +85,7 @@ pub async fn parse_chapters(
         let season_chapter = story_specific_parsing::parse_season_chapter_number(&html);
         let arc_title = story_specific_parsing::parse_arc_title(&html);
         // Works for all stories
-        let chapter_number = chapter_number_correction(comments::parse_chapter_number(&html));
+        let chapter_number = chapter - skips;
         let comments = comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
             .get(&chapter_number)
@@ -113,25 +116,4 @@ pub async fn parse_chapters(
     driver.quit().await.unwrap();
 
     (series_info, result)
-}
-
-async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
-    println!("Pre-Fetching Necessary Data");
-
-    let series_info = series_info::parse(pages, url).await;
-
-    println!("Completed Pre-Fetch");
-
-    let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
-
-    for chapter in &series_info.chapter_list_info {
-        match likes_date_hashmap.insert(
-            chapter.chapter_number,
-            LikesDate::new(chapter.likes, chapter.date.clone()),
-        ) {
-            Some(_) | None => continue,
-        };
-    }
-
-    (series_info, likes_date_hashmap)
 }

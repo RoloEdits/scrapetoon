@@ -1,13 +1,10 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{chapter_height_pixels, LikesDate};
-use line_core::{comments, series_info, SeriesInfo};
+use line_core::chapter_height_pixels;
+use line_core::{comments, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
-use std::{
-    collections::{HashMap, LinkedList},
-    thread,
-};
+use std::{collections::LinkedList, thread};
 use thirtyfour::prelude::*;
 
 pub mod config;
@@ -23,7 +20,8 @@ pub async fn parse_chapters(
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
 ) -> (SeriesInfo, LinkedList<ChapterInfo>) {
-    let (series_info, chapter_likes_date_map) = get_series_info(pages, config.page_url).await;
+    let (series_info, chapter_likes_date_map) =
+        line_core::series_info::get_extra_info(pages, config.page_url).await;
 
     let capabilities = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", capabilities)
@@ -38,6 +36,8 @@ pub async fn parse_chapters(
 
     let mut skips = 0;
     for chapter in start..=end + config.episode_url_offset {
+        bar.inc(1);
+
         if need_to_skip(chapter) {
             skips += 1;
             continue;
@@ -64,8 +64,6 @@ pub async fn parse_chapters(
         }
 
         thread::sleep(time::Duration::from_secs(5));
-
-        bar.inc(1);
 
         let html = Html::parse_document(&driver.source().await.unwrap());
 
@@ -95,24 +93,4 @@ pub async fn parse_chapters(
     driver.quit().await.unwrap();
 
     (series_info, result)
-}
-
-// TODO: Centralize to avoid duplication
-async fn get_series_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
-    println!("Pre-Fetching Necessary Data");
-    let series_info = series_info::parse(pages, url).await;
-    println!("Completed Pre-Fetch");
-
-    let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
-
-    for chapter in &series_info.chapter_list_info {
-        match likes_date_hashmap.insert(
-            chapter.chapter_number,
-            LikesDate::new(chapter.likes, chapter.date.clone()),
-        ) {
-            None | Some(_) => continue,
-        };
-    }
-
-    (series_info, likes_date_hashmap)
 }

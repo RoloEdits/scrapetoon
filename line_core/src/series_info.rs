@@ -1,9 +1,10 @@
 use core::time;
 use project_core::ResponseFactory;
 use scraper::{ElementRef, Html, Selector};
+use std::collections::HashMap;
 use std::thread;
 
-use crate::chapter_list;
+use crate::{chapter_list, LikesDate};
 
 use super::{regex, LinkedList, SeriesInfo};
 
@@ -28,6 +29,25 @@ pub async fn parse(end: u16, input_url: &str) -> SeriesInfo {
         rating,
         chapter_list_info,
     }
+}
+
+pub async fn get_extra_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
+    println!("Pre-Fetching Necessary Data");
+    let series_info = parse(pages, url).await;
+    println!("Completed Pre-Fetch");
+
+    let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
+
+    for chapter in &series_info.chapter_list_info {
+        match likes_date_hashmap.insert(
+            chapter.chapter_number,
+            LikesDate::new(chapter.likes, chapter.date.clone()),
+        ) {
+            None | Some(_) => continue,
+        };
+    }
+
+    (series_info, likes_date_hashmap)
 }
 
 // Series Helpers
