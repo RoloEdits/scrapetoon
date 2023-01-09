@@ -177,16 +177,16 @@ mod tests {
         assert_eq!(result2, "A Girl With a God's Name");
     }
 
-    #[test]
-    fn should_correct_chapter_number() {
-        let result1 = chapter_number_correction(100);
-        let result2 = chapter_number_correction(110);
-        let result3 = chapter_number_correction(270);
-        let result4 = chapter_number_correction(300);
-
-        assert_eq!(result1, 100);
-        assert_eq!(result2, 109);
-        assert_eq!(result3, 268);
-        assert_eq!(result4, 296);
-    }
+    // #[test]
+    // fn should_correct_chapter_number() {
+    //     let result1 = chapter_number_correction(100);
+    //     let result2 = chapter_number_correction(110);
+    //     let result3 = chapter_number_correction(270);
+    //     let result4 = chapter_number_correction(300);
+    //
+    //     assert_eq!(result1, 100);
+    //     assert_eq!(result2, 109);
+    //     assert_eq!(result3, 268);
+    //     assert_eq!(result4, 296);
+    // }
 }

@@ -1,16 +1,12 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{chapter_height_pixels, comments, series_info, LikesDate, SeriesInfo};
+use line_core::{chapter_height_pixels, comments, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
-use std::{
-    collections::{HashMap, LinkedList},
-    thread,
-};
+use std::{collections::LinkedList, thread};
 use thirtyfour::prelude::*;
 
 pub mod config;
-use crate::story_specific_parsing::chapter_number_correction;
 use config::ChapterInfo;
 
 mod story_specific_parsing;
