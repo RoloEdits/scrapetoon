@@ -1,7 +1,7 @@
 use chrono::Utc;
 use core::time;
 use reqwest::{Error, Response};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{fs, thread};
 
 pub mod regex;
@@ -50,18 +50,16 @@ pub fn get_current_utc_date() -> String {
 }
 
 #[must_use]
-pub fn create_date_folder(filepath: &str) -> String {
+pub fn create_date_folder(filepath: &str) -> PathBuf {
     let path = Path::new(filepath);
 
     let date_now = get_current_utc_date();
 
-    let date_path = path
-        .join(date_now)
-        .into_os_string()
-        .into_string()
-        .expect("date_path");
+    let date_path = path.join(date_now);
 
-    fs::create_dir(&date_path).expect("Create date folder");
+    if !path.exists() {
+        fs::create_dir(&date_path).expect("Create date folder");
+    }
 
     date_path
 }

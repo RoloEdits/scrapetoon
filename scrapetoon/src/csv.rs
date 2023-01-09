@@ -1,16 +1,18 @@
-use hashlink::LinkedHashSet;
 use static_assertions::assert_eq_size_val;
+use std::collections::LinkedList;
+use std::path::Path;
 
 use line_core::{DailyScheduleInfo, SeriesInfo};
 
-pub fn write_daily_schedule(path: &str, daily_schedule: &LinkedHashSet<DailyScheduleInfo>) {
-    let final_path = format!("{path}daily_schedule.csv");
+pub fn write_daily_schedule(path: &Path, daily_schedule: &LinkedList<DailyScheduleInfo>) {
+    let final_path = path.join("daily_schedule.csv");
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
     let header = [
         "title",
         "author",
         "genre",
+        "day",
         "total_likes",
         "status",
         "scrape_date",
@@ -24,6 +26,7 @@ pub fn write_daily_schedule(path: &str, daily_schedule: &LinkedHashSet<DailySche
         let title = story.title.as_str();
         let author = story.author.as_str();
         let genre = story.genre.as_str();
+        let day = story.day.as_str();
         let total_likes = format!("{}", story.total_likes);
         let status = story.status.as_str();
         let current_utc_date = project_core::get_current_utc_date();
@@ -32,6 +35,7 @@ pub fn write_daily_schedule(path: &str, daily_schedule: &LinkedHashSet<DailySche
             title,
             author,
             genre,
+            day,
             &total_likes,
             status,
             &current_utc_date,
@@ -48,13 +52,14 @@ pub fn write_daily_schedule(path: &str, daily_schedule: &LinkedHashSet<DailySche
     writer.flush().expect("Couldn't flush buffer.");
 }
 
-pub fn write_series_info(path: &str, series_info: &SeriesInfo) {
+pub fn write_series_info(path: &Path, series_info: &SeriesInfo) {
     let cleaned_filename = series_info
         .title
         .replace(['/', '<', '>', ':', '"', '\\', '|', '?', '*'], "");
 
-    let filename = format!("{cleaned_filename}.csv");
-    let final_path = format!("{path}{filename}");
+    // let filename = format!("{cleaned_filename}.csv");
+    let final_path = path.join(cleaned_filename).with_extension("csv");
+    // let final_path = format!("{path}{filename}");
     let mut writer =
         csv::Writer::from_path(final_path).expect("The system cannot find the path specified");
 

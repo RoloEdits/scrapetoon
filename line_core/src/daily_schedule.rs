@@ -1,18 +1,18 @@
-use hashlink::LinkedHashSet;
 use project_core::ResponseFactory;
 use scraper::{ElementRef, Html, Selector};
+use std::collections::LinkedList;
 
 use crate::DailyScheduleInfo;
 
 ///# Panics
 ///
 /// Will panic if there was a response but at the same time, the html text somehow didn't come with it unwrapping to a None.
-pub async fn parse() -> LinkedHashSet<DailyScheduleInfo> {
+pub async fn parse() -> LinkedList<DailyScheduleInfo> {
     const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 
-    let mut series: LinkedHashSet<DailyScheduleInfo> = LinkedHashSet::new();
+    let mut series_list: LinkedList<DailyScheduleInfo> = LinkedList::new();
 
-    let html = ResponseFactory::get(DAILY_SCHEDULE)
+    let response = ResponseFactory::get(DAILY_SCHEDULE)
         .await
         .map_or_else(
             |_| panic!("Error connecting to URL webpage: {DAILY_SCHEDULE}"),
@@ -22,25 +22,105 @@ pub async fn parse() -> LinkedHashSet<DailyScheduleInfo> {
         .await
         .expect("Error getting HTML from response");
 
-    let html = Html::parse_document(&html);
-    let daily_card = Selector::parse("ul.daily_card>li").unwrap();
+    let html = Html::parse_document(&response);
 
-    for card in html.select(&daily_card) {
+    parse_weekly_ongoing(&html, &mut series_list);
+    parse_completed(&html, &mut series_list);
+
+    series_list
+}
+
+fn parse_weekly_ongoing(html: &Html, series_list: &mut LinkedList<DailyScheduleInfo>) {
+    let ongoing_selector = Selector::parse("div#dailyList>div.daily_section").unwrap();
+
+    for week in html.select(&ongoing_selector) {
+        parse_week(&week, series_list);
+    }
+}
+
+fn parse_completed(html: &Html, series_list: &mut LinkedList<DailyScheduleInfo>) {
+    let completed_selector = Selector::parse("div.comp>div.daily_section").unwrap();
+
+    for completed in html.select(&completed_selector) {
+        parse_completed_cards(&completed, series_list);
+    }
+}
+
+fn parse_week(week: &ElementRef, series_list: &mut LinkedList<DailyScheduleInfo>) {
+    let day = parse_release_day(week);
+    parse_weekly_cards(week, &day, series_list);
+}
+
+fn parse_release_day(week: &ElementRef) -> String {
+    let day_selector = Selector::parse("h2>a._weekdaySelect").unwrap();
+
+    let day = week
+        .select(&day_selector)
+        .next()
+        .unwrap()
+        .value()
+        .attr("data-weekday")
+        .unwrap();
+
+    day.to_string()
+}
+
+fn parse_weekly_cards(
+    week: &ElementRef,
+    day: &str,
+    series_list: &mut LinkedList<DailyScheduleInfo>,
+) {
+    let card_list_selector = Selector::parse("ul.daily_card>li").unwrap();
+
+    for card in week.select(&card_list_selector) {
         let title = parse_daily_schedule_title(&card);
         let author = parse_daily_schedule_author(&card);
         let genre = parse_daily_schedule_genre(&card);
         let total_likes = parse_daily_schedule_total_likes(&card);
         let status = parse_daily_schedule_is_completed(&card);
 
-        series.insert(DailyScheduleInfo {
+        let day = match day {
+            "SUNDAY" => "Sunday",
+            "MONDAY" => "Monday",
+            "TUESDAY" => "Tuesday",
+            "WEDNESDAY" => "Wednesday",
+            "THURSDAY" => "Thursday",
+            "FRIDAY" => "Friday",
+            "SATURDAY" => "Saturday",
+            _ => "",
+        }
+        .to_string();
+
+        series_list.push_back(DailyScheduleInfo {
             title,
             author,
             genre,
             total_likes,
             status,
+            day,
         });
     }
-    series
+}
+
+fn parse_completed_cards(completed: &ElementRef, series_list: &mut LinkedList<DailyScheduleInfo>) {
+    let card_list_selector = Selector::parse("ul.daily_card>li").unwrap();
+
+    for card in completed.select(&card_list_selector) {
+        let title = parse_daily_schedule_title(&card);
+        let author = parse_daily_schedule_author(&card);
+        let genre = parse_daily_schedule_genre(&card);
+        let total_likes = parse_daily_schedule_total_likes(&card);
+        let status = parse_daily_schedule_is_completed(&card);
+
+        series_list.push_back(DailyScheduleInfo {
+            title,
+            author,
+            genre,
+            total_likes,
+            status,
+            day: "Completed".to_string(),
+        });
+    }
 }
 
 fn parse_daily_schedule_is_completed(card: &ElementRef) -> String {
