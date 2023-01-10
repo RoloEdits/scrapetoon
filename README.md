@@ -12,6 +12,8 @@
 
 There is a generic tool, `scrapetoon`, that gets Daily Schedule information as well as Story Page information. In addition to this are story specialized projects that get the same info as the Story Page, but also things like comments.
 
+Remember to always verify the data before using!
+
 ## What's Scraped
 
 ### Daily Schedule
