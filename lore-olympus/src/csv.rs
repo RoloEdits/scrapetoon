@@ -28,7 +28,7 @@ pub fn write(
         "total_comments",
         "likes",
         "total_likes",
-        "date",
+        "published",
         "user",
         "comment_body",
         "post_date",
