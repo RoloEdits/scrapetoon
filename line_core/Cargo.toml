@@ -11,3 +11,10 @@ cli_core = { path = "../cli_core" }
 regex = { workspace = true }
 scraper = { workspace = true}
 chrono = { workspace = true}
+tokio = { workspace = true }
+image = { workspace = true }
+rayon = { workspace = true }
+rand = { workspace = true }
+indicatif = { workspace = true }
+reqwest = { workspace = true }
+crossbeam = { workspace = true }

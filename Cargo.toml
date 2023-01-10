@@ -4,6 +4,7 @@ members = ["project_core", "line_core", "cli_core", "scrapetoon", "tower-of-god"
 
 [workspace.dependencies]
 clap = {version = "4.0.25", features = ["derive"]}
+reqwest = {version = "0.11.13", features = ["rustls"]}
 scraper = "0.13.0"
 csv = "1.1.6"
 regex = "1.7.0"
@@ -11,3 +12,8 @@ tokio = { version = "1.21.2", features = ["full"] }
 chrono = "0.4.23"
 thirtyfour = "0.31.0"
 static_assertions = "1.1.0"
+rayon = "1.6.1"
+indicatif = { version = "0.17.2", features = ["rayon"]}
+image = "0.24.5"
+rand = "0.8.5"
+crossbeam = "0.8.2"
