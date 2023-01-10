@@ -66,7 +66,7 @@ pub fn write(
         let arc = chapter.arc_title.as_str();
 
         // These functions work over all stories
-        let chapter_number = chapter.chapter_number.to_string();
+        let chapter_number = chapter.skips_adjusted_count.to_string();
         let comments = chapter.comments.to_string();
         let likes = chapter.likes.to_string();
         let date = chapter.date.as_str();

@@ -77,7 +77,8 @@ pub async fn parse_chapters(
             story_specific_parsing::parse_meaningful_chapter_number(&html);
 
         // Works for all stories
-        let chapter_number = chapter - skips;
+        let chapter_number = comments::parse_chapter_number(&html);
+        let skips_adjusted_count = chapter - skips;
         let comments = comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
             .get(&chapter_number)
@@ -99,6 +100,7 @@ pub async fn parse_chapters(
                 date,
                 user_comments,
                 chapter_length,
+                skips_adjusted_count,
             }
         });
     }

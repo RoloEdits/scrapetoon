@@ -71,22 +71,6 @@ pub fn parse_arc_title(html: &Html) -> String {
     arc_title.trim().to_string()
 }
 
-// pub const fn chapter_number_correction(chapter_number: u16) -> u16 {
-//     if chapter_number > 285 {
-//         return chapter_number - 4;
-//     }
-//
-//     if chapter_number > 267 {
-//         return chapter_number - 2;
-//     }
-//
-//     if chapter_number > 102 {
-//         return chapter_number - 1;
-//     }
-//
-//     chapter_number
-// }
-
 #[cfg(test)]
 mod tests {
 
@@ -176,17 +160,4 @@ mod tests {
         assert_eq!(result1, "Prologue");
         assert_eq!(result2, "A Girl With a God's Name");
     }
-
-    // #[test]
-    // fn should_correct_chapter_number() {
-    //     let result1 = chapter_number_correction(100);
-    //     let result2 = chapter_number_correction(110);
-    //     let result3 = chapter_number_correction(270);
-    //     let result4 = chapter_number_correction(300);
-    //
-    //     assert_eq!(result1, 100);
-    //     assert_eq!(result2, 109);
-    //     assert_eq!(result3, 268);
-    //     assert_eq!(result4, 296);
-    // }
 }

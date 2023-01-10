@@ -1,5 +1,6 @@
 use line_core::SeriesInfo;
 use lore_olympus::config::{ChapterInfo, CommentSum};
+use static_assertions::assert_eq_size_val;
 use std::collections::LinkedList;
 use std::path::Path;
 
@@ -55,8 +56,7 @@ pub fn write(
 
     for chapter in chapter_info {
         let season = chapter.season.to_string();
-        // let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
-        let chapter_number = chapter.chapter_number.to_string();
+        let meaningful_chapter_number = chapter.meaningful_chapter_number.to_string();
 
         // let chapter_number = chapter.chapter_number.to_string();
         let comments = chapter.comments.to_string();
@@ -73,7 +73,7 @@ pub fn write(
             let downvotes = comment.downvotes.to_string();
             let reply_count = comment.reply_count.to_string();
 
-            let record_body = [
+            let record_data = [
                 title,
                 author,
                 genre,
@@ -82,7 +82,7 @@ pub fn write(
                 &views,
                 &subscribers,
                 &rating,
-                &chapter_number,
+                &meaningful_chapter_number,
                 &chapter_length,
                 &comments,
                 &total_comments,
@@ -99,8 +99,11 @@ pub fn write(
                 &season,
             ];
 
+            // Sanity check to make sure both header and record_data match in length
+            assert_eq_size_val!(header, record_data);
+
             writer
-                .write_record(record_body)
+                .write_record(record_data)
                 .expect("Couldn't write to file.");
         }
     }

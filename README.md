@@ -28,7 +28,7 @@ The likes information, once it gets to the millions, is truncated, i.e. 1.1M. Th
 The data gathered from here is organized like so:
 
 | title | author | genre | total_likes | status | release_day | views | subscribers | rating | chapter | likes | date | scrape_date |
-|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:|-------|-------------|--------|---------|-------|------|-------------|
+|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:| ----- | ----------- | ------ | ------- | ----- | ---- | ----------- |
 
 The `chapter`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
 
@@ -157,7 +157,7 @@ No matter the story, there are things that can be shared between them no matter 
 As such, all data that is gotten as part of the [Story Page](#story-page) are included by default, along with the additions of:
 
 | chapter_length | comments | total_comments | user | comment_body | post_date | upvotes | downvotes | reply_count |
-|----------------|:--------:|:--------------:|:----:|:------------:|:---------:|:-------:|:---------:|:-----------:|
+| -------------- |:--------:|:--------------:|:----:|:------------:|:---------:|:-------:|:---------:|:-----------:|
 
 The way the scraping is implemented will work for all stories, but later on in this example, you will see that this data isn't always functionally usable.
 
@@ -281,7 +281,6 @@ With all the comments stripped away, this is what we have.
 
 ```rust
 pub struct ChapterInfo {
-
     pub season: u8,
     pub season_chapter: u16,
 
@@ -291,6 +290,7 @@ pub struct ChapterInfo {
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
     pub chapter_length: u32,
+    pub skips_adjusted_count: u16,
 }
 
 pub trait CommentSum {
@@ -322,10 +322,7 @@ pub const CONFIG: SeriesConfiguration = SeriesConfiguration {
 type Skip = fn(u16) -> bool;
 
 pub const TO_SKIP: Skip = |chapter: u16| -> bool {
-    match chapter {
-        221 => true,
-        _ => false,
-    }
+   matches!(chapter, 221)
 };
 ```
 
@@ -346,6 +343,7 @@ pub struct ChapterInfo {
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
     pub chapter_length: u32,
+    pub skips_adjusted_count: u16,
 }
 ```
 
@@ -356,6 +354,16 @@ I've put new lines in to block out an important thing. The `chapter_number`, `co
 On the other hand `season` and `season_chapter` is something that is specific to 'Tower of God'. This area is meant to be were we add our story specific data.
 
 For 'Lore Olympus', we have already determined that is has a season number and that we need to specially handle the chapter number. This is where we put that data, in preparation for that. 
+
+
+
+To note before proceeding:
+
+> The field `skips_adjusted_count` offers a potential at-the-ready solution in many cases for adjusted count of chapter number.
+> 
+> For any extra content added in, as well as bad endpoints, this should work just fine. As this is a demo, though, we will proceed to make our own in the cases where it might be necessary, with a potentially common issue.
+
+
 
 `season` can remain as that is also something we want from `Lore Olympus`, and we can change `season_chapter` to something that clearly defines what the meaningful chapter number would be.
 
@@ -372,6 +380,7 @@ pub struct ChapterInfo {
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
     pub chapter_length: u32,
+    pub skips_adjusted_count: u16,
 }
 ```
 
@@ -477,6 +486,7 @@ result.push_back({
                 date,
                 user_comments,
                 chapter_length,
+                skips_adjusted_count,
             })
 ```
 
@@ -661,7 +671,7 @@ Now the test passes, and with that we have completed the season number logic.
 
 Explanation of the problem: In the most generic of cases, the chapter number gotten from parsing the `#<NUM>` gives us what we want. This covers most kinds of scenarios, and because of the details of how data is gotten, is still needed to be scraped to be linked with that data. However, in our case, it doesn't give the best representation of the actual chapter count progression and, thinking of end use, leaves gaps between where it skipped.
 
-To fix this we need to come up with a way that will either give us the data we need on from scraping the chapter, or manually offset the numbers on multiple points, where each point demarcating an instance we need to offset simply being subtracted by n-points amount. This kind of brute force method might be all that you have, in which case you just have to set up the logic yourself.
+To fix this we need to come up with a way that will either give us the data we need on from scraping the chapter,or as mentioned before, using the `skips_adjusted_count` if this will work in the stories circumstance, or we have to manually offset the numbers on multiple points, where each point demarcating an instance we need to offset simply being subtracted by n-points amount. This kind of brute force method might be all that you have, in which case you just have to set up the logic yourself.
 
 In our case, as mentioned before, the chapter number we want is in the same group of data as the Season number was. All we need to do is adjust the regex to capture that value.
 
@@ -815,6 +825,7 @@ To remove the unused code warning, we can simply comment out the unused `chapter
 ```rust
 // let chapter_number = chapter.chapter_number.to_string();
 ```
+
 ### README.md
 
 All that's left is to edit the `README.md` to match the name of the story and the data format. 

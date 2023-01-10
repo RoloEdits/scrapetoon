@@ -67,7 +67,8 @@ pub async fn parse_chapters(
 
         let html = Html::parse_document(&driver.source().await.unwrap());
 
-        let chapter_number = chapter - skips;
+        let skips_adjusted_count = chapter - skips;
+        let chapter_number = comments::parse_chapter_number(&html);
         let comment_count = comments::parse_comment_count(&html);
         let date = chapter_likes_date_map
             .get(&chapter_number)
@@ -86,6 +87,7 @@ pub async fn parse_chapters(
                 date,
                 user_comments: comments,
                 chapter_length,
+                skips_adjusted_count,
             }
         });
     }

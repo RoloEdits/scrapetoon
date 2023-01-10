@@ -10,6 +10,7 @@ pub struct ChapterInfo {
     pub date: String,
     pub user_comments: LinkedList<UserComment>,
     pub chapter_length: u32,
+    pub skips_adjusted_count: u16,
 }
 
 pub trait CommentSum {

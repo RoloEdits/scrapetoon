@@ -54,7 +54,7 @@ pub fn write(
     let total_likes = series_info.sum_total_likes().to_string();
 
     for chapter in chapter_info {
-        let chapter_number = chapter.chapter_number.to_string();
+        let chapter_number = chapter.skips_adjusted_count.to_string();
         let comments = chapter.comments.to_string();
         let likes = chapter.likes.to_string();
         let date = chapter.date.as_str();
