@@ -36,7 +36,7 @@ The `chapter`, `likes`, and `date` are all relative to one chapter, with a new c
 
 ## ScrapeToon Usage
 
-Binary executables are provided for Windows, Mac, and Linux [here](https://github.com/RoloEdits/webtoon-scraper/releases).
+Binary executables are provided [here](https://github.com/RoloEdits/webtoon-scraper/releases). It's Windows only binaries for now, but once the pipleine is fleshed out, ones for Linux and Mac OS will be made available. 
 
 The executable is stand alone and fully portable. Simply placing it in a folder is all that is needed to continue forward.
 
