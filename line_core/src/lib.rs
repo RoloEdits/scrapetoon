@@ -2,9 +2,9 @@ pub mod chapter_height_pixels;
 pub mod chapter_list;
 pub mod comments;
 pub mod daily_schedule;
+pub mod panels;
 pub mod series_info;
 
-use project_core::regex;
 use std::collections::LinkedList;
 
 #[derive(Debug)]

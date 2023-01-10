@@ -6,17 +6,13 @@ use std::thread;
 
 use crate::{chapter_list, LikesDate};
 
-use super::{regex, LinkedList, SeriesInfo};
+use super::SeriesInfo;
 
-pub async fn parse(end: u16, input_url: &str) -> SeriesInfo {
-    let (genre, _id) = parse_url_info(input_url);
-
-    let mut chapter_list_info = LinkedList::new();
-
-    let (title, author, status, release_day, views, subscribers, rating) =
-        parse_series_page_info(input_url).await;
-
-    chapter_list::parse(end, input_url, &mut chapter_list_info).await;
+#[must_use]
+pub fn parse(end: u16, input_url: &str) -> SeriesInfo {
+    let (title, author, status, release_day, views, subscribers, rating, genre) =
+        parse_series_page_info(input_url);
+    let chapter_list_info = chapter_list::parse(end, input_url);
 
     SeriesInfo {
         title,
@@ -31,9 +27,10 @@ pub async fn parse(end: u16, input_url: &str) -> SeriesInfo {
     }
 }
 
-pub async fn get_extra_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
+#[must_use]
+pub fn get_extra_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
     println!("Pre-Fetching Necessary Data");
-    let series_info = parse(pages, url).await;
+    let series_info = parse(pages, url);
     println!("Completed Pre-Fetch");
 
     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
@@ -50,19 +47,11 @@ pub async fn get_extra_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, 
     (series_info, likes_date_hashmap)
 }
 
-// Series Helpers
-fn parse_url_info(url: &str) -> (String, u16) {
-    let reg = regex![
-        r"https://www.webtoons.com/../(?P<genre>.+)/(?P<title>.+)/list\?title_no=(?P<id>\d+)"
-    ];
-
-    let cap = reg.captures(url).unwrap();
-
-    (cap["genre"].to_string(), cap["id"].parse::<u16>().unwrap())
-}
-
 // Series Page
-async fn parse_series_page_info(url: &str) -> (String, String, String, String, u64, u32, f32) {
+#[tokio::main]
+async fn parse_series_page_info(
+    url: &str,
+) -> (String, String, String, String, u64, u32, f32, String) {
     let html = ResponseFactory::get(url)
         .await
         .map_or_else(
@@ -73,6 +62,7 @@ async fn parse_series_page_info(url: &str) -> (String, String, String, String, u
         .await
         .expect("Error getting HTML from response");
 
+    let genre = parse_genre(&html);
     let title = parse_series_page_title(&html);
     let author = parse_series_page_author(&html);
     let (release_day, status) = parse_series_page_release_day_and_status(&html);
@@ -90,6 +80,7 @@ async fn parse_series_page_info(url: &str) -> (String, String, String, String, u
         views,
         subscribers,
         rating,
+        genre,
     )
 }
 
@@ -108,6 +99,22 @@ fn parse_series_page_title(html: &str) -> String {
     }
 
     result.replace(':', ": ")
+}
+
+fn parse_genre(html: &str) -> String {
+    let html = Html::parse_document(html);
+    let genre_selector = Selector::parse(r"h2.genre").unwrap();
+
+    let genre = html
+        .select(&genre_selector)
+        .next()
+        .unwrap()
+        .text()
+        .next()
+        .unwrap()
+        .to_string();
+
+    genre
 }
 
 fn parse_series_page_rating(html: &str) -> f32 {
@@ -208,14 +215,17 @@ fn parse_series_page_release_day_and_status(html: &str) -> (String, String) {
         }
     }
 
+    const ONGOING: &str = "Ongoing";
+
+    // TODO: Make Day a Vec so stories with more than one day can show as such.
     let (day, status) = match result {
-        sub_text if sub_text.starts_with("SUN") => ("sunday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("MON") => ("monday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("TUE") => ("tuesday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("WED") => ("wednesday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("THU") => ("thursday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("FRI") => ("friday".to_string(), "ongoing".to_string()),
-        sub_text if sub_text.starts_with("SAT") => ("saturday".to_string(), "ongoing".to_string()),
+        sub_text if sub_text.starts_with("SUN") => ("Sunday".to_string(), ONGOING.to_string()),
+        sub_text if sub_text.starts_with("MON") => ("Monday".to_string(), ONGOING.to_string()),
+        sub_text if sub_text.starts_with("TUE") => ("Tuesday".to_string(), ONGOING.to_string()),
+        sub_text if sub_text.starts_with("WED") => ("Wednesday".to_string(), ONGOING.to_string()),
+        sub_text if sub_text.starts_with("THU") => ("Thursday".to_string(), ONGOING.to_string()),
+        sub_text if sub_text.starts_with("FRI") => ("Friday".to_string(), ONGOING.to_string()),
+        sub_text if sub_text.starts_with("SAT") => ("Saturday".to_string(), ONGOING.to_string()),
         _ => ("completed".to_string(), "completed".to_string()),
     };
 
@@ -250,6 +260,17 @@ fn parse_series_page_author(html: &str) -> String {
 
     result.trim().to_string()
 }
+
+// Series Helpers
+// fn parse_url_info(url: &str) -> (String, u16) {
+//     let reg = regex![
+//         r"https://www.webtoons.com/../(?P<genre>.+)/(?P<title>.+)/list\?title_no=(?P<id>\d+)"
+//     ];
+//
+//     let cap = reg.captures(url).unwrap();
+//
+//     (cap["genre"].to_string(), cap["id"].parse::<u16>().unwrap())
+// }
 
 #[cfg(test)]
 mod series_info_parsing_tests {
@@ -538,5 +559,21 @@ mod series_info_parsing_tests {
         let result = parse_series_page_title(TITLE);
 
         assert_eq!(result, "DARK MOON: THE BLOOD ALTAR");
+    }
+
+    #[test]
+    fn should_parse_genre() {
+        const GENRE: &str = r#"<div class="info">
+						<h2 class="genre g_romance">Romance</h2>
+						<h1 class="subj">Lore Olympus</h1>
+						<div class="author_area">
+										<a href="https://www.webtoons.com/en/creator/rachelsmythe" class="author NPI=a:creator,g:en_en _gaLoggingLink">Rachel Smythe</a>
+							<button type="button" class="ico_info2 _btnAuthorInfo">author info</button>
+						</div>
+					</div>"#;
+
+        let result = parse_genre(GENRE);
+
+        assert_eq!(result, "Romance");
     }
 }

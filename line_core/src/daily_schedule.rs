@@ -7,6 +7,8 @@ use crate::DailyScheduleInfo;
 ///# Panics
 ///
 /// Will panic if there was a response but at the same time, the html text somehow didn't come with it unwrapping to a None.
+#[tokio::main]
+#[must_use]
 pub async fn parse() -> LinkedList<DailyScheduleInfo> {
     const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 
