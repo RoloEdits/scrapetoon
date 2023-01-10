@@ -357,15 +357,11 @@ On the other hand `season` and `season_chapter` is something that is specific to
 
 For 'Lore Olympus', we have already determined that is has a season number and that we need to specially handle the chapter number. This is where we put that data, in preparation for that. 
 
-
-
 To note before proceeding:
 
 > The field `skips_adjusted_count` offers a potential at-the-ready solution in many cases for adjusted count of chapter number.
 > 
 > For any extra content added in, as well as bad endpoints, this should work just fine. As this is a demo, though, we will proceed to make our own in the cases where it might be necessary, with a potentially common issue.
-
-
 
 `season` can remain as that is also something we want from `Lore Olympus`, and we can change `season_chapter` to something that clearly defines what the meaningful chapter number would be.
 
@@ -840,7 +836,16 @@ And with that, we are done. Having had hindsight when writing this up, all of wh
 
 If you want to contribute, first of all, thank you, communities can only grow with effort. Small projects like these, for niches like Webtoons, really goes a long way in adding some depth and quality.
 
-Contributing are pretty simple. For all instances, open a branch with a name that signifies the hopeful contribution, and then make whatever change you wanted, then begin the pull request process.
+Contributing are pretty simple. For features, open a branch with a name schema listed below, and then make whatever change you wanted, then begin the pull request process.
+
+
+
+| Type           | Example                                            |
+|:-------------- |:--------------------------------------------------:|
+| Story          | `story/<STORY_NAME>`                               |
+| Feature        | `feature/<NEW_FEATURE>`                            |
+| Fix            | `fix/<BUG>`                                        |
+| Story Specific | `<STORY_PROJECT_NAME>/<FIX/FEATURE>/<BUG/FEATURE>` |
 
 ## Rust
 
