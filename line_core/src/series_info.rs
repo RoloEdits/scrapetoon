@@ -226,7 +226,7 @@ fn parse_series_page_release_day_and_status(html: &str) -> (String, String) {
         sub_text if sub_text.starts_with("THU") => ("Thursday".to_string(), ONGOING.to_string()),
         sub_text if sub_text.starts_with("FRI") => ("Friday".to_string(), ONGOING.to_string()),
         sub_text if sub_text.starts_with("SAT") => ("Saturday".to_string(), ONGOING.to_string()),
-        _ => ("completed".to_string(), "completed".to_string()),
+        _ => ("Completed".to_string(), "Completed".to_string()),
     };
 
     (day, status)
@@ -499,10 +499,10 @@ mod series_info_parsing_tests {
         let monday = parse_series_page_release_day_and_status(DAY);
         let completed = parse_series_page_release_day_and_status(COMPLETED);
 
-        assert_eq!(monday, ("monday".to_string(), "ongoing".to_string()));
+        assert_eq!(monday, ("Monday".to_string(), "Ongoing".to_string()));
         assert_eq!(
             completed,
-            ("completed".to_string(), "completed".to_string())
+            ("Completed".to_string(), "Completed".to_string())
         );
     }
 
