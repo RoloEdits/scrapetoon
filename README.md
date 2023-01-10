@@ -44,7 +44,7 @@ Once placed in a folder, simply right click in an empty part of the file explore
 
 From there you just need to enter `.\scrapetoon.exe` on Windows, or `./scrapetoon` on Linux and Mac.
 
-Once there you then have the option of which source of data you want to scrape: `daily` or `story`.
+Once there, you then have the option of which source of data you want to scrape: `daily`, `page`, or `panels`.
 
 For example:
 
@@ -53,7 +53,11 @@ For example:
 ```
 
 ```shell
-.\scrapetoon.exe story
+.\scrapetoon.exe page
+```
+
+```shell
+.\scrapetoon.exe panels
 ```
 
 `daily` requires only an output location to be given. This is done with either `--output` or the short version `-o` followed by the output directory.
@@ -68,10 +72,10 @@ For example:
 .\scrapetoon.exe daily --output "D:\Desktop"
 ```
 
-`story` requires a bit more. Firstly a URL needs to be given after, with the flags `-u | --url`.
+`page` requires a bit more. Firstly a URL needs to be given after, with the flags `-u | --url`.
 
 ```shell
-.\scrapetoon.exe story --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154"
+.\scrapetoon.exe page --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154"
 ```
 
 And secondly, it also requires a numerical value to be given for an `end`. This value correlates to the page numbers below the chapter list. The scraper goes from 1 to the entered value. If you want all pages to be gone through, then you just enter the highest, the last, page.
@@ -81,26 +85,34 @@ And secondly, it also requires a numerical value to be given for an `end`. This 
 In this case, if I want all pages, I enter 13
 
 ```shell
-.\scrapetoon.exe story -u "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" -e 13
+.\scrapetoon.exe page -u "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" -e 13
 ```
 
 ```shell
-.\scrapetoon.exe story -url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end-page 13
+.\scrapetoon.exe page --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end 13
 ```
 
 And same as before the `-o | --output` flag.
 
 ```shell
-.\scrapetoon.exe story -u "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" -e 13 -o "D:\Desktop"
+.\scrapetoon.exe page -u "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" -e 13 -o "D:\Desktop"
 ```
 
 ```shell
-.\scrapetoon.exe story -url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end-page 13 --output "D:\Desktop"
+.\scrapetoon.exe page --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --end 13 --output "D:\Desktop"
 ```
 
 Once you have what you need entered in, press the `ENTER` key, and it will begin its operation. If you entered an invalid output path, it will stop and inform you. From the entered path, a folder in created with the name of the current UTC date as its name. After that you will be prompted with a message of an attempt to connect, and once connected, a progress bar will render showing the elapsed time as well as the current amount done and what's needed.
 
 The output files will either be `daily_schedule.csv` if you configured for `daily`, or `<STORY NAME>.csv` if you configured for `story`. In this examples case: `omniscient reader.csv`.
+
+Lastly is `panels`. This option requires four inputs. `--output`, `--url`, `--start`, and `--end`. This option will go through each chapter and construct a full resolution `png` output for that chapter, saved where you set `--output` to. The name of the file corresponding to the `#<NUM>` value of the chapter.
+
+```shell
+.\scrapetoon.exe panels --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --start 1 --end 100 --output "D:\Desktop"
+```
+
+The url is the main story pages url, same as previous. The start and end are gotten from the `episode_no=<NUM>` portion of a chapters url. Just enter the range you want, making sure that the actual chapters urls are what you want, and it will download those chapters.
 
 An alternative to using the program in a folder is to add it to your main `PATH`. Doing this would allow you to use the program no matter directory and with just the name `scrapetoon` rather than `.\scrapetoon.exe`. 
 
