@@ -11,5 +11,4 @@ line_core = { path = "../line_core" }
 cli_core = { path = "../cli_core"}
 csv = { workspace = true }
 clap = { workspace = true }
-tokio = { workspace = true }
 static_assertions = { workspace = true }

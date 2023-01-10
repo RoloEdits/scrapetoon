@@ -5,8 +5,7 @@ use the_god_of_high_school::config;
 
 mod csv;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = StoryCliArgs::parse();
 
     let (series_info, parsed_chapters) = the_god_of_high_school::parse_chapters(
@@ -15,8 +14,7 @@ async fn main() {
         args.pages,
         &config::CONFIG,
         config::TO_SKIP,
-    )
-    .await;
+    );
 
     csv::write(
         path_enforcer(&args.output),

@@ -5,8 +5,7 @@ use project_core::path_enforcer;
 
 mod csv;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = StoryCliArgs::parse();
 
     let (series_info, parsed_chapters) = kubera::parse_chapters(
@@ -15,8 +14,7 @@ async fn main() {
         args.pages,
         &config::CONFIG,
         config::TO_SKIP,
-    )
-    .await;
+    );
 
     csv::write(
         path_enforcer(&args.output),

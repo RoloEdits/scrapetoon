@@ -76,7 +76,7 @@ pub fn write_series_info(path: &Path, series_info: &SeriesInfo) {
         "total_chapters",
         "chapter",
         "likes",
-        "chapter_release_date",
+        "published",
         "scrape_date",
     ];
 

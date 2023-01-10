@@ -1,42 +1,57 @@
 use chrono::NaiveDate;
-use cli_core::ProgressBarFactory;
-use core::time;
+use crossbeam::queue::SegQueue;
+use indicatif::ParallelProgressIterator;
 use project_core::ResponseFactory;
+use rayon::prelude::*;
 use scraper::{ElementRef, Html, Selector};
-use std::{collections::LinkedList, thread};
+
+use std::collections::LinkedList;
 
 use crate::ChapterListInfo;
+
 ///# Panics
 ///
 /// Will panic if there was a response but at the same time, the html text somehow didn't come with it unwrapping to a None.
-pub async fn parse(end: u16, input_url: &str, chapter_info: &mut LinkedList<ChapterListInfo>) {
-    let bar = ProgressBarFactory::get_bar(end);
-
-    for page in 1..=end {
-        let url = format!("{input_url}&page={page}");
-
-        let html_response = if let Ok(ok) = ResponseFactory::get(&url).await {
-            ok
-        } else {
-            eprintln!("Error connecting to webpage, attempting to save progress and exit...");
-
-            assert!(!chapter_info.is_empty(), "Nothing to save, exiting.");
-
-            break;
-        }
-        .text()
-        .await
+#[must_use]
+pub fn parse(end: u16, input_url: &str) -> LinkedList<ChapterListInfo> {
+    // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(6)
+        .build_global()
         .unwrap();
 
-        parse_each_chapters_chapter_info(&html_response, chapter_info);
+    let range: Vec<_> = (1..=end).collect();
+    let total = range.len() as u64;
 
-        thread::sleep(time::Duration::from_secs(3));
+    let chapter_info: SegQueue<ChapterListInfo> = SegQueue::new();
 
-        bar.inc(1);
+    range
+        .into_par_iter()
+        .progress_count(total)
+        .for_each(|page| {
+            let url = format!("{input_url}&page={page}");
+            work(&url, &chapter_info);
+        });
+
+    let mut result: LinkedList<ChapterListInfo> = LinkedList::new();
+
+    for info in chapter_info {
+        result.push_back(info);
     }
+
+    result
 }
 
-fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<ChapterListInfo>) {
+#[tokio::main]
+async fn work(url: &str, chapter_info: &SegQueue<ChapterListInfo>) {
+    if let Ok(response) = ResponseFactory::get(url).await {
+        let html = response.text().await.unwrap();
+
+        parse_each_chapters_chapter_info(&html, chapter_info);
+    };
+}
+
+fn parse_each_chapters_chapter_info(html: &str, chapter_info: &SegQueue<ChapterListInfo>) {
     let html = Html::parse_document(html);
 
     let chapter_selector = Selector::parse("ul#_listUl>li").unwrap();
@@ -45,7 +60,7 @@ fn parse_each_chapters_chapter_info(html: &str, chapter_info: &mut LinkedList<Ch
         let chapter_number = parse_chapter_number(&chapter);
         let likes = parse_chapter_like_amount(&chapter);
         let date = parse_chapter_date(&chapter);
-        chapter_info.push_back(ChapterListInfo {
+        chapter_info.push(ChapterListInfo {
             chapter_number,
             likes,
             date,

@@ -29,8 +29,8 @@ The likes information, once it gets to the millions, is truncated, i.e. 1.1M. Th
 
 The data gathered from here is organized like so:
 
-| title | author | genre | total_likes | status | release_day | views | subscribers | rating | chapter | likes | date | scrape_date |
-|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:| ----- | ----------- | ------ | ------- | ----- | ---- | ----------- |
+| title | author | genre | total_likes | status | release_day | views | subscribers | rating | chapter | likes | published | scrape_date |
+|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:| ----- | ----------- | ------ | ------- | ----- | --------- | ----------- |
 
 The `chapter`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
 
@@ -237,8 +237,6 @@ Once this is done, open up the `main.rs` file inside the `src` folder.
 
 It should look something like this, with red squiggles indicating errors. 
 
-![main.rs initial state with errors](imgs/lore_olympus_main_no_changes.png)
-
 The fix is to change `tower_of_god` to the new name we have been using. A format like this: `use <project name>::config;` and `<project name>::parse_chapters`.
 
 In our case we change to `lore_olympus` like so:
@@ -250,7 +248,6 @@ use lore_olympus::config;
 
 mod csv;
 
-#[tokio::main]
 async fn main() {
     let args = StoryCliArgs::parse();
 
@@ -260,7 +257,7 @@ async fn main() {
         args.pages,
         &config::CONFIG,
         config::TO_SKIP,
-    ).await;
+    );
 
     csv::write(
         &args.output,
@@ -725,7 +722,7 @@ writer.write_record([
             "total_comments",
             "likes",
             "total_likes",
-            "date",
+            "published",
             "user",
             "comment_body",
             "post_date",
@@ -837,8 +834,6 @@ And with that, we are done. Having had hindsight when writing this up, all of wh
 If you want to contribute, first of all, thank you, communities can only grow with effort. Small projects like these, for niches like Webtoons, really goes a long way in adding some depth and quality.
 
 Contributing are pretty simple. For features, open a branch with a name schema listed below, and then make whatever change you wanted, then begin the pull request process.
-
-
 
 | Type           | Example                                            |
 |:-------------- |:--------------------------------------------------:|

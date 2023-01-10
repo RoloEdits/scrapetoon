@@ -1,8 +1,9 @@
 use cli_core::ProgressBarFactory;
 use core::time;
-use line_core::{chapter_height_pixels, comments, SeriesInfo};
+use line_core::{chapter_height_pixels, comments, LikesDate, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
+use std::collections::HashMap;
 use std::{collections::LinkedList, thread};
 use thirtyfour::prelude::*;
 
@@ -14,7 +15,7 @@ mod story_specific_parsing;
 /// # Panics
 ///
 /// Will panic if `ChromeDriver` isn't running
-pub async fn parse_chapters(
+pub fn parse_chapters(
     start: u16,
     end: u16,
     pages: u16,
@@ -22,8 +23,20 @@ pub async fn parse_chapters(
     need_to_skip: fn(u16) -> bool,
 ) -> (SeriesInfo, LinkedList<ChapterInfo>) {
     let (series_info, chapter_likes_date_map) =
-        line_core::series_info::get_extra_info(pages, config.page_url).await;
+        line_core::series_info::get_extra_info(pages, config.page_url);
+    let result = work(start, end, config, need_to_skip, &chapter_likes_date_map);
 
+    (series_info, result)
+}
+
+#[tokio::main]
+async fn work(
+    start: u16,
+    end: u16,
+    config: &SeriesConfiguration<'_>,
+    need_to_skip: fn(u16) -> bool,
+    chapter_likes_date_map: &HashMap<u16, LikesDate>,
+) -> LinkedList<ChapterInfo> {
     let capabilities = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", capabilities)
         .await
@@ -59,7 +72,7 @@ pub async fn parse_chapters(
                     } else {
                         // If fails to connect it will return any already scraping
                         eprintln!("Error connecting to webpage, saving progress and exiting...");
-                        return (series_info, result);
+                        return result;
                     }
                 }
                 Ok(ok) => break ok,
@@ -107,5 +120,5 @@ pub async fn parse_chapters(
 
     driver.quit().await.unwrap();
 
-    (series_info, result)
+    result
 }
