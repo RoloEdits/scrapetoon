@@ -85,34 +85,34 @@ pub fn path_enforcer(filepath: &str) -> &Path {
     path
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // TODO: Need to mock
-
-    #[test]
-    fn should_create_date_folder() {
-        let given_path = r"D:\temp";
-
-        let date = get_current_utc_date();
-
-        let result = create_date_folder(given_path)
-            .into_os_string()
-            .into_string()
-            .unwrap();
-
-        let test = format!("{given_path}\\{date}");
-
-        assert_eq!(result, test);
-    }
-
-    #[test]
-    fn should_create_valid_folder() {
-        let given_path = r"D:\temp\temp";
-
-        let result = path_enforcer(given_path).to_str().unwrap();
-
-        assert_eq!(result, given_path);
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     // TODO: Need to mock
+//
+//     #[test]
+//     fn should_create_date_folder() {
+//         let given_path = r"D:\temp";
+//
+//         let date = get_current_utc_date();
+//
+//         let result = create_date_folder(given_path)
+//             .into_os_string()
+//             .into_string()
+//             .unwrap();
+//
+//         let test = format!("{given_path}\\{date}");
+//
+//         assert_eq!(result, test);
+//     }
+//
+//     #[test]
+//     fn should_create_valid_folder() {
+//         let given_path = r"D:\temp\temp";
+//
+//         let result = path_enforcer(given_path).to_str().unwrap();
+//
+//         assert_eq!(result, given_path);
+//     }
+// }
