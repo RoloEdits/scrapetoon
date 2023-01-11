@@ -20,8 +20,8 @@ Remember to always verify the data before using!
 
 The data gathered from here is organized like so:
 
-| title | author | genre | total_likes | status | scrape_date |
-|:-----:|:------:|:-----:|:-----------:|:------:|:-----------:|
+| title | author | genre | day | total_likes | status | scrape_date |
+|:-----:|:------:|:-----:|:---:|:-----------:|:------:|:-----------:|
 
 The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad, cast with a net, but if you want more accuracy than you would need to use the other part of the scraper and scrape the stories page.
 
@@ -34,9 +34,9 @@ The data gathered from here is organized like so:
 
 The `chapter`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
 
-## ScrapeToon Usage
+## Scrapetoon Usage
 
-Binary executables are provided [here](https://github.com/RoloEdits/webtoon-scraper/releases). It's Windows only binaries for now, but once the pipleine is fleshed out, ones for Linux and Mac OS will be made available. 
+Binary executables are provided [here](https://github.com/RoloEdits/webtoon-scraper/releases). It's Windows only binaries for now, but once the pipeline is fleshed out, ones for Linux and Mac OS will be made available. 
 
 The executable is stand alone and fully portable. Simply placing it in a folder is all that is needed to continue forward.
 
