@@ -1,4 +1,4 @@
-<h1 style="text-align: center;">ScrapeToon</h1>
+<h1 style="text-align: center;">Scrapetoon</h1>
 
 <p align="center">
   <img src="imgs/scrapetoon_logo.png" alt="Guided by Fate" height="300"/>
