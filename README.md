@@ -25,6 +25,14 @@ The data gathered from here is organized like so:
 
 The likes information, once it gets to the millions, is truncated, i.e. 1.1M. This data is nice for a broad, cast with a net, but if you want more accuracy than you would need to use the other part of the scraper and scrape the stories page.
 
+
+
+Example plots using the data:
+
+<img src="imgs/total_likes_genre_strip.png" title="" alt="" data-align="center">
+
+<img src="imgs/total_likes_day_strip.png" title="" alt="" data-align="center">
+
 ### Story Page
 
 The data gathered from here is organized like so:
@@ -33,6 +41,12 @@ The data gathered from here is organized like so:
 |:-----:|:------:|:-----:|:-----------:|:------:|:-----------:| ----- | ----------- | ------ | ------- | ----- | --------- | ----------- |
 
 The `chapter`, `likes`, and `date` are all relative to one chapter, with a new chapter on each row. The date is in the ISO 8601 format.
+
+
+
+Example plot using the data:
+
+<img src="imgs/lets_play_like_var.png" title="" alt="" data-align="center">
 
 ## Scrapetoon Usage
 
@@ -80,7 +94,7 @@ For example:
 
 And secondly, it also requires a numerical value to be given for an `end`. This value correlates to the page numbers below the chapter list. The scraper goes from 1 to the entered value. If you want all pages to be gone through, then you just enter the highest, the last, page.
 
-![page numbers for chapter list](imgs/omniscient_reader_page_numbers.png "page numbers")
+<img src="imgs/omniscient_reader_page_numbers.png" title="page numbers" alt="page numbers for chapter list" data-align="center">
 
 In this case, if I want all pages, I enter 13
 
@@ -181,7 +195,7 @@ Firstly, we need to do some recon. Ideally, you know enough about the story alre
 
 Going to the stories page a few things stand out immediately. 
 
-![Lore Olympus #229](imgs/lore_olympus_229.png)
+<img src="imgs/lore_olympus_229.png" title="" alt="Lore Olympus #229" data-align="center">
 
 Thinking of what is not gotten already, or in a wrong way, I can see that there are seasons, and that there is potential of a pattern here with `(S3)`. Scrolling beyond to other pages I can see that this holds true for season 2, with `(S2)`, however going back before that, to season 1, there is no such `(S1)` or any indicator of a season. We will need to keep this in mind.
 
@@ -195,7 +209,7 @@ https://www.webtoons.com/en/romance/lore-olympus/s3-episode-225/viewer?title_no=
 
 The part we need to pay attention to is the very end, the `episode_no=` part.
 
-![Lore Olympus indicator up-close](imgs/lore_olympus_230_close.png)
+<img src="imgs/lore_olympus_230_close.png" title="" alt="Lore Olympus indicator up-close" data-align="center">
 
 In this example of Episode `#230`, they do, in fact, match up, meaning that more likely than not we won't have to deal with the sites technical issue workarounds. If the story you are adapting doesn't match up, this means that they, for some reason, had to skip a number. You just need to find where this happened and note the bad `episode_no=` number for later.
 
@@ -551,7 +565,7 @@ pub fn parse_season_number(html: &Html) -> u8 {
 
 `h1.subj_episode` corresponds to this section: The `(S3) Episode 225` in this case.
 
-![](imgs/subj_episode_example.png)
+<img src="imgs/subj_episode_example.png" title="" alt="" data-align="center">
 
 This is great, as it's the area that has the info we need. Not just for the season, but also the correct, meaningful, chapter number we saw would be a problem earlier, but that will be next.
 
@@ -559,7 +573,7 @@ This is great, as it's the area that has the info we need. Not just for the seas
 
 First things first, to make the rest easy, we will go to a chapter, and once it's loaded, open up the dev tools of our browser. In Chrome, you can right-click and inspect. Then we need to get enter the selector tool and then click the `(S3) Episode <NUM>` part from above.
 
-![](imgs/devtool_selector_tool.png)
+<img src="imgs/devtool_selector_tool.png" title="" alt="" data-align="center">
 
 It should highlight an area in the elements tab:
 
@@ -567,7 +581,7 @@ It should highlight an area in the elements tab:
 
 Right-click on the `div class="subj_info">` element, and copy it.
 
-![](imgs/copy_html_element.png)
+<img src="imgs/copy_html_element.png" title="" alt="" data-align="center">
 
 Now near the bottom of the `story_specific_parsing.rs` file, you will see a test:
 
@@ -841,6 +855,12 @@ All that's left is to edit the `README.md` to match the name of the story and th
 
 And with that, we are done. Having had hindsight when writing this up, all of what we did is confirmed to work. But in your case, you should test and run the app to make sure it works as expected.
 
+Here are some plots of the data:
+
+<img src="imgs/lore_olympus_areas.png" title="" alt="" data-align="center">
+
+<img src="imgs/lore_olympus_violins.png" title="" alt="" data-align="center">
+
 # Contribution
 
 If you want to contribute, first of all, thank you, communities can only grow with effort. Small projects like these, for niches like Webtoons, really goes a long way in adding some depth and quality.
@@ -879,6 +899,8 @@ Csv submissions are also very much welcome. if you are adding a new project, put
 For markdown files, just simply passing a spell check should be good enough.
 
 For rust documentation, similar applies.
+
+# 
 
 # License
 
