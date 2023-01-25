@@ -54,7 +54,7 @@ impl SeriesInfo {
 #[derive(Serialize, Debug)]
 pub struct UserComment {
     pub user: Option<String>,
-    pub body: Option<String>,
+    pub contents: Option<String>,
     pub post_date: Option<String>,
     pub upvotes: Option<u32>,
     pub downvotes: Option<u32>,
@@ -73,7 +73,7 @@ impl UserComment {
     ) -> Self {
         Self {
             user,
-            body,
+            contents: body,
             post_date,
             upvotes,
             downvotes,
@@ -188,7 +188,7 @@ impl GenericRecord<'_> {
 
             for comment in chap.user_comments {
                 let user = comment.user;
-                let comment_body = comment.body;
+                let comment_body = comment.contents;
                 let post_date = comment.post_date;
                 let upvotes = comment.upvotes;
                 let downvotes = comment.downvotes;

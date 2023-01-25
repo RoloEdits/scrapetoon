@@ -1,8 +1,9 @@
 use anyhow::{anyhow, bail, Context, Result};
 use chrono::NaiveDate;
-
+use reqwest::blocking::Client;
 use scraper::{ElementRef, Html, Selector};
-use std::collections::VecDeque;
+use serde::Deserialize;
+use std::collections::{HashMap, VecDeque};
 
 use crate::UserComment;
 
@@ -231,6 +232,117 @@ pub fn parse_comment_body(
         .to_string();
 
     Some(comment_text.replace('\n', " "))
+}
+
+/// # Errors
+pub fn parse_comments_and_replies_from_json(url: &str) -> Result<(u32, u32)> {
+    let client = Client::new();
+
+    let template: HashMap<String, String> = HashMap::new();
+
+    let response = client
+        .get(url)
+        .header("referer", "https://www.webtoons.com/")
+        .json(&template)
+        .send()
+        .context("Failed to connect to Comments Section API")?;
+
+    let cleaned = response
+        .text()
+        .context("Failed to get JSON body")?
+        .replace("_callback(", "")
+        .replace(");", "");
+
+    let json: JsonResponse =
+        serde_json::from_str(&cleaned).context("Failed to deserialize comment api json")?;
+
+    // TODO: Make structs for json response
+    let comments = json.result.count.comment;
+
+    let replies = json.result.count.reply;
+
+    for user_comments in json.result.best_comments {
+        let username = user_comments.username;
+        let replies = user_comments.replies;
+        let upvotes = user_comments.upvotes;
+        let downvotes = user_comments.downvotes;
+        let content = user_comments.contents;
+        let profile_type = user_comments.profile_type;
+        let country = user_comments.country;
+        let postdate = user_comments.post_date;
+
+        println!(
+            "Username: {username}\nReplies: {replies}\nUpvotes: {upvotes}\nDownvotes: {downvotes}\nComment: {content}\nProfile Type: {profile_type}\nCountry: {country}\nPost Date: {postdate}\n"
+        );
+    }
+
+    for user_comments in json.result.user_comments {
+        let username = user_comments.username;
+        let replies = user_comments.replies;
+        let upvotes = user_comments.upvotes;
+        let downvotes = user_comments.downvotes;
+        let content = user_comments.contents;
+        let profile_type = user_comments.profile_type;
+        let country = user_comments.country;
+        let postdate = user_comments.post_date;
+
+        println!(
+            "Username: {username}\nReplies: {replies}\nUpvotes: {upvotes}\nDownvotes: {downvotes}\nComment: {content}\nProfile Type: {profile_type}\nCountry: {country}\nPost Date: {postdate}\n"
+        );
+    }
+
+    Ok((comments, replies))
+}
+
+// TODO: Move to models module in restructure
+#[derive(Deserialize)]
+struct JsonResponse {
+    result: JsonResult,
+}
+
+#[derive(Deserialize)]
+struct JsonResult {
+    count: Count,
+
+    #[serde(alias = "commentList")]
+    user_comments: Vec<JsonUserComment>,
+    #[serde(alias = "bestList")]
+    best_comments: [JsonUserComment; 3],
+}
+#[derive(Deserialize)]
+struct Count {
+    reply: u32,
+    comment: u32,
+}
+
+#[derive(Deserialize)]
+struct JsonUserComment {
+    #[serde(alias = "userName")]
+    username: String,
+    #[serde(alias = "replyCount")]
+    replies: u32,
+    #[serde(alias = "sympathyCount")]
+    upvotes: u32,
+    #[serde(alias = "antipathyCount")]
+    downvotes: u32,
+    #[serde(alias = "contents")]
+    contents: String,
+    #[serde(alias = "profileType")]
+    profile_type: String,
+    #[serde(alias = "country")]
+    country: String,
+    #[serde(alias = "regTime")]
+    post_date: String,
+}
+
+fn comments_api_url_builder(id: u32, chapter: u16, comments: u16) -> String {
+    const START: &str = r"https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=webtoon&templateId=or_en&pool=cbox&lang=en";
+    const END: &str =
+        r"&listType=OBJECT&pageType=default&initialize=true&useAltSort=true&sort=FAVORITE";
+
+    let built_url = format!("{START}&objectId=w_{id}_{chapter}&pageSize={comments}{END}");
+
+    built_url
 }
 
 #[cfg(test)]
@@ -463,12 +575,31 @@ mod parse_comments_tests {
         let check = result.into_iter().next().unwrap();
 
         assert_eq!(
-            check.body,
+            check.contents,
             Some(String::from("Hey Guys, this is the beginning of a legend."))
         );
         assert_eq!(check.upvotes, Some(63_591));
         assert_eq!(check.downvotes, Some(295));
         assert_eq!(check.reply_count, Some(114));
         assert_eq!(check.post_date, Some(String::from("2014-11-06")));
+    }
+
+    #[test]
+    #[ignore]
+    fn should_get_comment_count_from_json_response() {
+        let url = comments_api_url_builder(95, 2, 15);
+
+        let (comments, replies) = parse_comments_and_replies_from_json(&url).unwrap();
+
+        assert_eq!(3191, comments);
+        assert_eq!(2584, replies);
+    }
+    #[test]
+    fn should_build_json_spi_url() {
+        let url = comments_api_url_builder(95, 1, 15);
+
+        let expected = r"https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=webtoon&templateId=or_en&pool=cbox&lang=en&objectId=w_95_1&pageSize=15&listType=OBJECT&pageType=default&initialize=true&useAltSort=true&sort=FAVORITE";
+
+        assert_eq!(url, expected);
     }
 }

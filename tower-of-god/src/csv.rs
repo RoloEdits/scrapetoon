@@ -73,7 +73,7 @@ pub fn write(
 
         for comment in &chapter.user_comments {
             let user = comment.user.as_ref().unwrap().as_str();
-            let comment_body = comment.body.as_ref().unwrap().as_str();
+            let comment_body = comment.contents.as_ref().unwrap().as_str();
             let post_date = comment.post_date.as_ref().unwrap().as_str();
             let upvotes = comment.upvotes.as_ref().unwrap().to_string();
             let downvotes = comment.downvotes.as_ref().unwrap().to_string();

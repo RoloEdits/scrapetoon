@@ -1,12 +1,13 @@
 use crate::comments::parse_chapter_number;
 use anyhow::{anyhow, bail, Context, Result};
+use blocking::Client;
 use core::time;
 use image::{GenericImage, ImageBuffer, RgbImage};
 use indicatif::ParallelProgressIterator;
 use project_core::BlockingResponseFactory;
 use rand::prelude::*;
 use rayon::prelude::*;
-use reqwest::StatusCode;
+use reqwest::{blocking, StatusCode};
 use scraper::{Html, Selector};
 use std::{collections::VecDeque, fs, path::Path, thread};
 
@@ -117,7 +118,7 @@ fn download_links_async<'a>(
     thread::sleep(time::Duration::from_secs(random_wait));
 
     // TODO: Move to builder
-    let client = reqwest::blocking::Client::new();
+    let client = Client::new();
 
     let mut images: VecDeque<IntermediateImageInfo> = VecDeque::new();
 

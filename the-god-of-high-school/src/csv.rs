@@ -40,7 +40,7 @@ pub fn write(
 
         for comment in chap.user_comments {
             let user = comment.user;
-            let comment_body = comment.body;
+            let comment_body = comment.contents;
             let post_date = comment.post_date;
             let upvotes = comment.upvotes;
             let downvotes = comment.downvotes;
