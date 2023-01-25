@@ -1,24 +1,24 @@
+use anyhow::{bail, Context, Result};
 use scraper::{Html, Selector};
 
-///# Panics
-///
-/// Will panic if there are no images.
-#[must_use]
-pub fn from(html: &Html) -> u32 {
-    let image_selector = Selector::parse("img._images").unwrap();
+/// # Errors
+pub fn from(html: &Html) -> Result<u32> {
+    if let Ok(image_selector) = Selector::parse("img._images") {
+        let mut pixels_height = 0.0;
 
-    let mut pixels_height = 0.0;
+        for image in html.select(&image_selector) {
+            pixels_height += image
+                .value()
+                .attr("height")
+                .with_context(|| "Couldn't parse image height value")?
+                .parse::<f32>()
+                .with_context(|| "Couldn't parse height value to u32")?;
+        }
 
-    for image in html.select(&image_selector) {
-        pixels_height += image
-            .value()
-            .attr("height")
-            .unwrap()
-            .parse::<f32>()
-            .unwrap();
+        return Ok(pixels_height as u32);
     }
 
-    pixels_height as u32
+    bail!("Failed to create image selector")
 }
 
 #[cfg(test)]
@@ -26,6 +26,7 @@ mod parse_chapter_length {
     use scraper::Html;
 
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn should_parse_chapter_length_in_pixels() {
@@ -89,7 +90,7 @@ mod parse_chapter_length {
 
         let html = Html::parse_document(IMAGE_LIST);
 
-        let result = from(&html);
+        let result = from(&html).unwrap();
 
         assert_eq!(result, 12_210);
     }

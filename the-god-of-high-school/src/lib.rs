@@ -1,11 +1,12 @@
+use anyhow::{bail, Context, Result};
 use cli_core::ProgressBarFactory;
 use core::time;
 use line_core::{chapter_height_pixels, LikesDate};
 use line_core::{comments, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
-use std::collections::HashMap;
-use std::{collections::LinkedList, thread};
+use std::collections::{HashMap, VecDeque};
+use std::thread;
 use thirtyfour::prelude::*;
 
 pub mod config;
@@ -14,19 +15,23 @@ use config::ChapterInfo;
 /// # Panics
 ///
 /// Will panic if `ChromeDriver` isn't running
+///
+/// # Errors
+///
+///
 pub fn parse_chapters(
     start: u16,
     end: u16,
     pages: u16,
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
-) -> (SeriesInfo, LinkedList<ChapterInfo>) {
+) -> Result<(SeriesInfo, VecDeque<ChapterInfo>)> {
     let (series_info, chapter_likes_date_map) =
-        line_core::series_info::get_extra_info(pages, config.page_url);
+        line_core::series_info::get_extra_info(pages, config.page_url)?;
 
-    let result = work(start, end, config, need_to_skip, &chapter_likes_date_map);
+    let result = work(start, end, config, need_to_skip, &chapter_likes_date_map)?;
 
-    (series_info, result)
+    Ok((series_info, result))
 }
 
 #[tokio::main]
@@ -36,13 +41,13 @@ async fn work(
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
     chapter_likes_date_map: &HashMap<u16, LikesDate>,
-) -> LinkedList<ChapterInfo> {
+) -> Result<VecDeque<ChapterInfo>> {
     let capabilities = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", capabilities)
         .await
-        .unwrap();
+        .context("ChromeDriver not running")?;
 
-    let mut result: LinkedList<ChapterInfo> = LinkedList::new();
+    let mut result: VecDeque<ChapterInfo> = VecDeque::new();
 
     let bar = ProgressBarFactory::get_bar(end + 1 - start);
 
@@ -70,9 +75,7 @@ async fn work(
                         thread::sleep(time::Duration::from_secs(wait));
                         wait *= 2;
                     } else {
-                        // If fails to connect it will return any already scraping
-                        eprintln!("Error connecting to webpage, saving progress and exiting...");
-                        return result;
+                        bail!("Failed connecting to webpage, saving progress and exiting...");
                     }
                 }
                 Ok(ok) => break ok,
@@ -83,19 +86,27 @@ async fn work(
         // If you notice inconsistent behavior, can increase to see if that solves it.
         thread::sleep(time::Duration::from_secs(5));
 
-        let html = Html::parse_document(&driver.source().await.unwrap());
+        let html = Html::parse_document(
+            &driver
+                .source()
+                .await
+                .context("Failed to get source from driver response")?,
+        );
 
         let skips_adjusted_count = chapter - skips;
-        let chapter_number = comments::parse_chapter_number(&html);
-        let comment_count = comments::parse_comment_count(&html);
+        let chapter_number = comments::parse_chapter_number(&html)?;
+        let comment_count = comments::parse_comment_count(&html)?;
         let date = chapter_likes_date_map
             .get(&chapter_number)
             .unwrap()
             .date
             .clone();
-        let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
-        let comments = comments::parse_users(&html);
-        let chapter_length = chapter_height_pixels::from(&html);
+        let likes = chapter_likes_date_map
+            .get(&chapter_number)
+            .expect("Failed to get likes and date data")
+            .likes;
+        let comments = comments::parse_users(&html)?;
+        let chapter_length = chapter_height_pixels::from(&html)?;
 
         result.push_back({
             ChapterInfo {
@@ -112,5 +123,5 @@ async fn work(
 
     driver.quit().await.unwrap();
 
-    result
+    Ok(result)
 }

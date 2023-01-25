@@ -1,10 +1,11 @@
+use anyhow::Result;
 use cli_core::ProgressBarFactory;
 use core::time;
 use line_core::{chapter_height_pixels, comments, LikesDate, SeriesInfo};
 use project_core::SeriesConfiguration;
 use scraper::Html;
-use std::collections::HashMap;
-use std::{collections::LinkedList, thread};
+use std::collections::{HashMap, VecDeque};
+use std::thread;
 use thirtyfour::prelude::*;
 
 pub mod config;
@@ -21,13 +22,13 @@ pub fn parse_chapters(
     pages: u16,
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
-) -> (SeriesInfo, LinkedList<ChapterInfo>) {
+) -> Result<(SeriesInfo, VecDeque<ChapterInfo>)> {
     let (series_info, chapter_likes_date_map) =
-        line_core::series_info::get_extra_info(pages, config.page_url);
+        line_core::series_info::get_extra_info(pages, config.page_url)?;
 
-    let result = work(start, end, config, need_to_skip, &chapter_likes_date_map);
+    let result = work(start, end, config, need_to_skip, &chapter_likes_date_map)?;
 
-    (series_info, result)
+    Ok((series_info, result))
 }
 
 #[tokio::main]
@@ -37,13 +38,11 @@ async fn work(
     config: &SeriesConfiguration<'_>,
     need_to_skip: fn(u16) -> bool,
     chapter_likes_date_map: &HashMap<u16, LikesDate>,
-) -> LinkedList<ChapterInfo> {
+) -> Result<VecDeque<ChapterInfo>> {
     let capabilities = DesiredCapabilities::chrome();
-    let driver = WebDriver::new("http://localhost:9515", capabilities)
-        .await
-        .unwrap();
+    let driver = WebDriver::new("http://localhost:9515", capabilities).await?;
 
-    let mut result: LinkedList<ChapterInfo> = LinkedList::new();
+    let mut result: VecDeque<ChapterInfo> = VecDeque::new();
 
     let bar = ProgressBarFactory::get_bar(end + 1 - start);
 
@@ -73,7 +72,7 @@ async fn work(
                     } else {
                         // If fails to connect it will return any already scraping
                         eprintln!("Error connecting to webpage, saving progress and exiting...");
-                        return result;
+                        return Ok(result);
                     }
                 }
                 Ok(ok) => break ok,
@@ -92,9 +91,9 @@ async fn work(
             story_specific_parsing::parse_meaningful_chapter_number(&html);
 
         // Works for all stories
-        let chapter_number = comments::parse_chapter_number(&html);
+        let chapter_number = comments::parse_chapter_number(&html)?;
         let skips_adjusted_count = chapter - skips;
-        let comments = comments::parse_comment_count(&html);
+        let comments = comments::parse_comment_count(&html)?;
         let date = chapter_likes_date_map
             .get(&chapter_number)
             .unwrap()
@@ -102,8 +101,8 @@ async fn work(
             .clone();
 
         let likes = chapter_likes_date_map.get(&chapter_number).unwrap().likes;
-        let user_comments = comments::parse_users(&html);
-        let chapter_length = chapter_height_pixels::from(&html);
+        let user_comments = comments::parse_users(&html)?;
+        let chapter_length = chapter_height_pixels::from(&html)?;
 
         result.push_back({
             ChapterInfo {
@@ -121,7 +120,7 @@ async fn work(
         });
     }
 
-    driver.quit().await.unwrap();
+    driver.quit().await?;
 
-    result
+    Ok(result)
 }

@@ -1,20 +1,25 @@
+use super::SeriesInfo;
+use crate::{chapter_list, LikesDate};
+use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use project_core::ResponseFactory;
-use scraper::{ElementRef, Html, Selector};
+use scraper::{Html, Selector};
 use std::collections::HashMap;
 use std::thread;
 
-use crate::{chapter_list, LikesDate};
+const ONGOING: &str = "Ongoing";
+type SeriesPageInfo = (String, String, String, String, u64, u32, f32, String);
 
-use super::SeriesInfo;
-
-#[must_use]
-pub fn parse(end: u16, input_url: &str) -> SeriesInfo {
+/// # Errors
+///
+/// Results in an Error
+pub fn parse(end: u16, input_url: &str) -> Result<SeriesInfo> {
+    // TODO: Try to refactor this tuple mess
     let (title, author, status, release_day, views, subscribers, rating, genre) =
-        parse_series_page_info(input_url);
-    let chapter_list_info = chapter_list::parse(end, input_url);
+        parse_series_page_info(input_url)?;
+    let chapter_list_info = chapter_list::parse(end, input_url)?;
 
-    SeriesInfo {
+    Ok(SeriesInfo {
         title,
         author,
         genre,
@@ -24,55 +29,51 @@ pub fn parse(end: u16, input_url: &str) -> SeriesInfo {
         subscribers,
         rating,
         chapter_list_info,
-    }
+    })
 }
 
-#[must_use]
-pub fn get_extra_info(pages: u16, url: &str) -> (SeriesInfo, HashMap<u16, LikesDate>) {
+/// # Errors
+///
+/// Results in an Error
+pub fn get_extra_info(pages: u16, url: &str) -> Result<(SeriesInfo, HashMap<u16, LikesDate>)> {
     println!("Pre-Fetching Necessary Data");
-    let series_info = parse(pages, url);
+    let series_info = parse(pages, url)?;
     println!("Completed Pre-Fetch");
 
     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
 
     for chapter in &series_info.chapter_list_info {
         match likes_date_hashmap.insert(
-            chapter.chapter_number,
+            chapter.chapter,
             LikesDate::new(chapter.likes, chapter.date.clone()),
         ) {
             None | Some(_) => continue,
         };
     }
 
-    (series_info, likes_date_hashmap)
+    Ok((series_info, likes_date_hashmap))
 }
 
 // Series Page
 #[tokio::main]
-async fn parse_series_page_info(
-    url: &str,
-) -> (String, String, String, String, u64, u32, f32, String) {
+async fn parse_series_page_info(url: &str) -> Result<SeriesPageInfo> {
     let html = ResponseFactory::get(url)
-        .await
-        .map_or_else(
-            |_| panic!("Error connecting to URL webpage: {url}"),
-            |html_response| html_response,
-        )
+        .await?
         .text()
         .await
-        .expect("Error getting HTML from response");
+        .context("Failed to get HTML body as text")?;
 
-    let genre = parse_genre(&html);
-    let title = parse_series_page_title(&html);
-    let author = parse_series_page_author(&html);
-    let (release_day, status) = parse_series_page_release_day_and_status(&html);
-    let views = parse_series_page_views(&html);
-    let subscribers = parse_series_page_subscribers(&html);
-    let rating = parse_series_page_rating(&html);
+    let genre = parse_genre(&html)?;
+    let title = parse_series_page_title(&html)?;
+    let author = parse_series_page_author(&html)?;
+    let (release_day, status) = parse_series_page_release_day_and_status(&html)?;
+    let views = parse_series_page_views(&html)?;
+    let subscribers = parse_series_page_subscribers(&html)?;
+    let rating = parse_series_page_rating(&html)?;
 
     thread::sleep(time::Duration::from_secs(3));
 
-    (
+    Ok((
         title,
         author,
         status,
@@ -81,184 +82,207 @@ async fn parse_series_page_info(
         subscribers,
         rating,
         genre,
-    )
+    ))
 }
 
-fn parse_series_page_title(html: &str) -> String {
+fn parse_series_page_title(html: &str) -> Result<String> {
     let html = Html::parse_document(html);
-    let title_selector = Selector::parse(r"h1.subj").unwrap();
+    let title_selector = Selector::parse(r"h1.subj").expect("Failed to parse Title selector");
 
-    let mut title_element = html.select(&title_selector);
-    let title_fragment = title_element.next().unwrap();
-    let title_text = title_fragment.text().collect::<Vec<_>>();
+    if let Some(title_fragment) = html.select(&title_selector).next() {
+        let title_text = title_fragment.text().collect::<Vec<_>>();
+        let mut result = String::new();
 
-    let mut result = String::new();
+        for word in title_text {
+            result.push_str(word);
+        }
 
-    for word in title_text {
-        result.push_str(word);
+        return Ok(result.replace(':', ": "));
     }
 
-    result.replace(':', ": ")
+    bail!("Failed to parse title")
 }
 
-fn parse_genre(html: &str) -> String {
+fn parse_genre(html: &str) -> Result<String> {
     let html = Html::parse_document(html);
-    let genre_selector = Selector::parse(r"h2.genre").unwrap();
+    let genre_selector = Selector::parse(r"h2.genre").expect("Failed to parse Genre Selector");
 
     let genre = html
         .select(&genre_selector)
         .next()
-        .unwrap()
+        .ok_or_else(|| anyhow!("Failed to parse genre element"))?
         .text()
         .next()
-        .unwrap()
+        .ok_or_else(|| anyhow!("Failed to parse genre to text"))?
         .to_string();
 
-    genre
+    Ok(genre)
 }
 
-fn parse_series_page_rating(html: &str) -> f32 {
+fn parse_series_page_rating(html: &str) -> Result<f32> {
     let html = Html::parse_document(html);
-    let rating_selector = Selector::parse(r"em#_starScoreAverage").unwrap();
+    let rating_selector =
+        Selector::parse(r"em#_starScoreAverage").expect("Failed to parse rating selector");
+    if let Some(rating_fragment) = html.select(&rating_selector).next() {
+        let rating_text = rating_fragment
+            .text()
+            .next()
+            .ok_or_else(|| anyhow!("Failed to parse rating to text"))?;
 
-    let mut rating_element = html.select(&rating_selector);
-    let rating_fragment = rating_element.next().unwrap();
-    let rating_text = rating_fragment.text().next().unwrap();
+        let result = rating_text
+            .parse::<f32>()
+            .with_context(|| format!("Failed to parse {rating_text} as a f32"))?;
+        return Ok(result);
+    }
 
-    rating_text.parse::<f32>().unwrap()
+    bail!("Failed to parse rating")
 }
 
-fn parse_series_page_subscribers(html: &str) -> u32 {
+fn parse_series_page_subscribers(html: &str) -> Result<u32> {
     let html = Html::parse_document(html);
-    let subscribers_selector = Selector::parse(r"em.cnt").unwrap();
+    let subscribers_selector =
+        Selector::parse(r"em.cnt").expect("Failed to parse subscriber selector");
 
-    let subscribers_element = html.select(&subscribers_selector);
+    if let Some(subs) = html.select(&subscribers_selector).nth(1) {
+        if let Some(sub) = subs.text().collect::<Vec<_>>().first() {
+            let result = match sub {
+                m if m.ends_with('M') => {
+                    let cleaned_m = m.replace('M', "");
+                    let million = cleaned_m.parse::<f32>().with_context(|| {
+                        format!("Failed to parse subscriber count. Value = {cleaned_m}")
+                    })? * 1_000_000.0;
+                    million as u32
+                }
+                k => {
+                    let cleaned_k = k.replace(',', "");
+                    cleaned_k.parse::<u32>().with_context(|| {
+                        format!("Failed to parse view count. Value = {cleaned_k}")
+                    })?
+                }
+            };
 
-    let mut result: String = String::new();
-
-    for (iteration, element) in subscribers_element.enumerate() {
-        if iteration == 1 {
-            result = element.text().collect::<Vec<_>>()[0].to_string();
-            break;
+            return Ok(result);
         }
     }
 
-    match result {
-        sub_text if sub_text.ends_with('M') => {
-            let float = sub_text
-                .replace('M', "")
-                .parse::<f32>()
-                .unwrap_or_else(|_| {
-                    panic!("Error! Couldn't get subscriber count. Value ={sub_text}")
-                })
-                * 1_000_000.0;
-            float as u32
-        }
-        sub_text => sub_text
-            .replace(',', "")
-            .parse::<u32>()
-            .unwrap_or_else(|_| panic!("Error! Couldn't get subscriber count. Value ={sub_text}")),
-    }
+    bail!("Failed to parse subscribers")
 }
 
-fn parse_series_page_views(html: &str) -> u64 {
+fn parse_series_page_views(html: &str) -> Result<u64> {
     let html = Html::parse_document(html);
-    let views_selector = Selector::parse(r"em.cnt").unwrap();
+    let views_selector = Selector::parse(r"em.cnt").expect("Failed to create views selector");
 
-    let views_element = html.select(&views_selector);
+    if let Some(views) = html.select(&views_selector).next() {
+        let result =
+            match *views
+                .text()
+                .collect::<Vec<_>>()
+                .first()
+                .ok_or_else(|| anyhow!(""))?
+            {
+                m if m.ends_with('M') => {
+                    let cleaned_m = m.replace('M', "");
+                    let million = cleaned_m.parse::<f64>().with_context(|| {
+                        format!("Failed to parse view count. Value = {cleaned_m}")
+                    })? * 1_000_000.0;
+                    million as u64
+                }
+                b if b.ends_with('B') => {
+                    let cleaned_b = b.replace('B', "");
+                    let billion = cleaned_b.parse::<f64>().with_context(|| {
+                        format!("Failed to parse view count. Value = {cleaned_b}")
+                    })? * 1_000_000_000.0;
+                    billion as u64
+                }
+                k => {
+                    let cleaned_k = k.replace(',', "");
+                    cleaned_k.parse::<u64>().with_context(|| {
+                        format!("Failed to parse view count. Value = {cleaned_k}")
+                    })?
+                }
+            };
 
-    let mut result: String = String::new();
-
-    for (iteration, element) in views_element.enumerate() {
-        if iteration == 0 {
-            result = element.text().collect::<Vec<_>>()[0].to_string();
-            break;
-        }
+        return Ok(result);
     }
 
-    match result {
-        sub_text if sub_text.ends_with('M') => {
-            let million = sub_text
-                .replace('M', "")
-                .parse::<f64>()
-                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}"))
-                * 1_000_000.0;
-            million as u64
-        }
-        sub_text if sub_text.ends_with('B') => {
-            let billion = sub_text
-                .replace('B', "")
-                .parse::<f64>()
-                .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}"))
-                * 1_000_000_000.0;
-            billion as u64
-        }
-        sub_text => sub_text
-            .replace(',', "")
-            .parse::<u64>()
-            .unwrap_or_else(|_| panic!("Error! Couldn't get view count. Value ={sub_text}")),
-    }
+    bail!("Failed to parse views")
 }
 
-fn parse_series_page_release_day_and_status(html: &str) -> (String, String) {
+fn parse_series_page_release_day_and_status(html: &str) -> Result<(String, String)> {
     let html = Html::parse_document(&html.replace("EVERY ", "").replace("UP", ""));
-    let day_selector = Selector::parse(r"p.day_info").unwrap();
 
-    let day_element = html.select(&day_selector);
+    if let Ok(day_selector) = Selector::parse(r"p.day_info") {
+        if let Some(day) = html.select(&day_selector).next() {
+            // TODO: Make Day a Vec so stories with more than one day can show as such.
+            let (day, status) = match *day
+                .text()
+                .collect::<Vec<_>>()
+                .first()
+                .ok_or_else(|| anyhow!("Day was Empty"))?
+            {
+                sun if sun.starts_with("SUN") => ("Sunday".to_string(), ONGOING.to_string()),
+                mon if mon.starts_with("MON") => ("Monday".to_string(), ONGOING.to_string()),
+                tue if tue.starts_with("TUE") => ("Tuesday".to_string(), ONGOING.to_string()),
+                wed if wed.starts_with("WED") => ("Wednesday".to_string(), ONGOING.to_string()),
+                thu if thu.starts_with("THU") => ("Thursday".to_string(), ONGOING.to_string()),
+                fri if fri.starts_with("FRI") => ("Friday".to_string(), ONGOING.to_string()),
+                sat if sat.starts_with("SAT") => ("Saturday".to_string(), ONGOING.to_string()),
+                _ => ("Completed".to_string(), "Completed".to_string()),
+            };
 
-    let mut result: String = String::new();
+            return Ok((day, status));
+        }
 
-    for (iteration, element) in day_element.enumerate() {
-        if iteration == 0 {
-            result = element.text().collect::<Vec<_>>()[0].to_string();
-            break;
+        bail!("Failed to parse a day");
+    }
+
+    bail!("Failed to create Day Selector")
+}
+
+fn parse_series_page_author(html: &str) -> Result<String> {
+    let html = Html::parse_document(html);
+
+    if let Ok(author_with_link_selector) = Selector::parse(r"a.author") {
+        if let Some(author_fragment) = html.select(&author_with_link_selector).next() {
+            let author_text = author_fragment
+                .text()
+                .next()
+                .ok_or_else(|| anyhow!("Failed to parse Author name"))?;
+
+            let mut result = String::new();
+
+            // This is for cases where there are, for some reason, webtoon putting a bunch of tabs and new-lines in the name.
+            // 66,666 Years: Advent of the Dark Mage is the first example, unknown if the only.
+            for text in author_text.trim().replace('\n', "").split_whitespace() {
+                result.push_str(text);
+                result.push(' ');
+            }
+
+            return Ok(result.trim().to_string());
         }
     }
 
-    const ONGOING: &str = "Ongoing";
+    if let Ok(author_without_link_selector) = Selector::parse(r"div.author_area") {
+        if let Some(author_fragment) = html.select(&author_without_link_selector).next() {
+            let author_text = author_fragment
+                .text()
+                .next()
+                .ok_or_else(|| anyhow!("Failed to parse Author name"))?;
 
-    // TODO: Make Day a Vec so stories with more than one day can show as such.
-    let (day, status) = match result {
-        sub_text if sub_text.starts_with("SUN") => ("Sunday".to_string(), ONGOING.to_string()),
-        sub_text if sub_text.starts_with("MON") => ("Monday".to_string(), ONGOING.to_string()),
-        sub_text if sub_text.starts_with("TUE") => ("Tuesday".to_string(), ONGOING.to_string()),
-        sub_text if sub_text.starts_with("WED") => ("Wednesday".to_string(), ONGOING.to_string()),
-        sub_text if sub_text.starts_with("THU") => ("Thursday".to_string(), ONGOING.to_string()),
-        sub_text if sub_text.starts_with("FRI") => ("Friday".to_string(), ONGOING.to_string()),
-        sub_text if sub_text.starts_with("SAT") => ("Saturday".to_string(), ONGOING.to_string()),
-        _ => ("Completed".to_string(), "Completed".to_string()),
-    };
+            let mut result = String::new();
 
-    (day, status)
-}
+            // This is for cases where there are, for some reason, webtoon putting a bunch of tabs and new-lines in the name.
+            // 66,666 Years: Advent of the Dark Mage is the first example, unknown if the only.
+            for text in author_text.trim().replace('\n', "").split_whitespace() {
+                result.push_str(text);
+                result.push(' ');
+            }
 
-fn parse_series_page_author(html: &str) -> String {
-    let html = Html::parse_document(html);
-    let author_with_link_selector = Selector::parse(r"a.author").unwrap();
-    let author_without_link_selector = Selector::parse(r"div.author_area").unwrap();
-
-    let mut author_element = html.select(&author_with_link_selector);
-    let author_fragment: ElementRef = author_element.next().map_or_else(
-        || {
-            let without_link = html.select(&author_without_link_selector).next().unwrap();
-
-            without_link
-        },
-        |some| some,
-    );
-
-    let author_text = author_fragment.text().next().unwrap();
-
-    let mut result = String::new();
-
-    // This is for cases where there are, for some reason, webtoon putting a bunch of tabs and new-lines in the name.
-    // 66,666 Years: Advent of the Dark Mage is the first example, unknown if the only.
-    for text in author_text.trim().replace('\n', "").split_whitespace() {
-        result.push_str(text);
-        result.push(' ');
+            return Ok(result.trim().to_string());
+        }
     }
 
-    result.trim().to_string()
+    bail!("Failed to create Author Selector")
 }
 
 // Series Helpers
@@ -275,6 +299,7 @@ fn parse_series_page_author(html: &str) -> String {
 #[cfg(test)]
 mod series_info_parsing_tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn should_parse_rating_936() {
@@ -327,7 +352,7 @@ mod series_info_parsing_tests {
         </li>
     </ul>"##;
 
-        let result = parse_series_page_rating(RATING);
+        let result = parse_series_page_rating(RATING).unwrap();
 
         assert_eq!(result, 9.86_f32);
     }
@@ -404,8 +429,8 @@ mod series_info_parsing_tests {
     </li>
 </ul>"##;
 
-        let result_1 = parse_series_page_subscribers(SUBSCRIBERS_1);
-        let result_2 = parse_series_page_subscribers(SUBSCRIBERS_2);
+        let result_1 = parse_series_page_subscribers(SUBSCRIBERS_1).unwrap();
+        let result_2 = parse_series_page_subscribers(SUBSCRIBERS_2).unwrap();
 
         assert_eq!(result_1, 3_300_000);
         assert_eq!(result_2, 232_037);
@@ -477,10 +502,10 @@ mod series_info_parsing_tests {
     <em class="cnt">956.3M</em>
 </li>"#;
 
-        let result_1 = parse_series_page_views(VIEWS_1);
-        let result_2 = parse_series_page_views(VIEWS_2);
-        let result_3 = parse_series_page_views(VIEWS_3);
-        let result_4 = parse_series_page_views(VIEWS_4);
+        let result_1 = parse_series_page_views(VIEWS_1).unwrap();
+        let result_2 = parse_series_page_views(VIEWS_2).unwrap();
+        let result_3 = parse_series_page_views(VIEWS_3).unwrap();
+        let result_4 = parse_series_page_views(VIEWS_4).unwrap();
 
         assert_eq!(result_1, 1_000_000_000);
         assert_eq!(result_2, 245_678);
@@ -496,8 +521,8 @@ mod series_info_parsing_tests {
         const COMPLETED: &str =
             r##"<p class="day_info"><span class="txt_ico_up">UP</span>COMPLETED</p>"##;
 
-        let monday = parse_series_page_release_day_and_status(DAY);
-        let completed = parse_series_page_release_day_and_status(COMPLETED);
+        let monday = parse_series_page_release_day_and_status(DAY).unwrap();
+        let completed = parse_series_page_release_day_and_status(COMPLETED).unwrap();
 
         assert_eq!(monday, ("Monday".to_string(), "Ongoing".to_string()));
         assert_eq!(
@@ -536,9 +561,9 @@ mod series_info_parsing_tests {
         <button type="button" class="ico_info2 _btnAuthorInfo">author info</button>
         </div>"##;
 
-        let author = parse_series_page_author(AUTHOR);
-        let author_1 = parse_series_page_author(AUTHOR_1);
-        let author_2 = parse_series_page_author(AUTHOR_2);
+        let author = parse_series_page_author(AUTHOR).unwrap();
+        let author_1 = parse_series_page_author(AUTHOR_1).unwrap();
+        let author_2 = parse_series_page_author(AUTHOR_2).unwrap();
 
         assert_eq!(author, "instantmiso".to_string());
         assert_eq!(author_1, "HYBE".to_string());
@@ -556,7 +581,7 @@ mod series_info_parsing_tests {
         </div>
     </div>"#;
 
-        let result = parse_series_page_title(TITLE);
+        let result = parse_series_page_title(TITLE).unwrap();
 
         assert_eq!(result, "DARK MOON: THE BLOOD ALTAR");
     }
@@ -572,7 +597,7 @@ mod series_info_parsing_tests {
 						</div>
 					</div>"#;
 
-        let result = parse_genre(GENRE);
+        let result = parse_genre(GENRE).unwrap();
 
         assert_eq!(result, "Romance");
     }

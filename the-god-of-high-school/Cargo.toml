@@ -13,7 +13,7 @@ chrono = { workspace = true }
 regex = { workspace = true }
 csv = { workspace = true }
 clap = { workspace = true }
-static_assertions = { workspace = true }
 project_core = { path = "../project_core" }
 line_core = { path = "../line_core" }
 cli_core = { path = "../cli_core" }
+anyhow = { workspace = true }

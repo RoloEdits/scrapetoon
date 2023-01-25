@@ -12,3 +12,4 @@ cli_core = { path = "../cli_core"}
 csv = { workspace = true }
 clap = { workspace = true }
 static_assertions = { workspace = true }
+anyhow = { workspace = true }

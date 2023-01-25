@@ -1,10 +1,10 @@
 use static_assertions::assert_eq_size_val;
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 use std::path::Path;
 
 use line_core::{DailyScheduleInfo, SeriesInfo};
 
-pub fn write_daily_schedule(path: &Path, daily_schedule: &LinkedList<DailyScheduleInfo>) {
+pub fn write_daily_schedule(path: &Path, daily_schedule: &VecDeque<DailyScheduleInfo>) {
     let final_path = path.join("daily_schedule.csv");
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
@@ -96,7 +96,7 @@ pub fn write_series_info(path: &Path, series_info: &SeriesInfo) {
         let rating = series_info.rating.to_string();
         let total_chapters = series_info.chapter_list_info.len().to_string();
 
-        let chapter_number = chapter.chapter_number.to_string();
+        let chapter_number = chapter.chapter.to_string();
         let likes = chapter.likes.to_string();
         let chapter_release_date = chapter.date.as_str();
 

@@ -1,23 +1,26 @@
 use crate::comments::parse_chapter_number;
+use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use image::{GenericImage, ImageBuffer, RgbImage};
 use indicatif::ParallelProgressIterator;
-use project_core::ResponseFactory;
+use project_core::BlockingResponseFactory;
 use rand::prelude::*;
 use rayon::prelude::*;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
 use std::{collections::VecDeque, fs, path::Path, thread};
 
+/// # Errors
+///
 /// # Panics
-pub fn get(url: &str, path: &str, start: u16, end: u16) {
+pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
     let path = Path::new(path);
 
     // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
     rayon::ThreadPoolBuilder::new()
         .num_threads(6)
         .build_global()
-        .unwrap();
+        .context("Failed to build thread pool")?;
 
     let range: Vec<_> = (start..=end).collect();
 
@@ -26,37 +29,46 @@ pub fn get(url: &str, path: &str, start: u16, end: u16) {
     range
         .into_par_iter()
         .progress_count(total)
-        .for_each(|chapter| {
-            get_chapter_panels(url, path, chapter);
-        });
+        .try_for_each(|chapter| {
+            if get_chapter_panels(url, path, chapter).is_err() {
+                // TODO: Log
+                bail!("Failed to parse Chapter {chapter}")
+            }
+            Ok(())
+        })?;
+
+    Ok(())
 }
 
-#[tokio::main]
-async fn get_chapter_panels(url: &str, path: &Path, chapter: u16) {
+fn get_chapter_panels(url: &str, path: &Path, chapter: u16) -> Result<()> {
     let url = url_builder(url, chapter);
 
-    let response = ResponseFactory::get(&url).await.unwrap();
+    let response = BlockingResponseFactory::get(&url)?;
 
     if response.status() != StatusCode::OK {
-        return;
+        return Ok(());
     }
 
-    let body = response.text().await.unwrap();
+    let body = response
+        .text()
+        .context("Failed to get text body from response")?;
 
     let html = Html::parse_document(&body);
 
-    let links = get_image_links(&html);
+    let links = get_image_links(&html)?;
 
-    let chapter_number = parse_chapter_number(&html);
+    let chapter_number = parse_chapter_number(&html)?;
 
-    let downloaded_images = download_links_async(&links, &url, chapter_number).await;
+    let downloaded_images = download_links_async(&links, &url, chapter_number)?;
 
-    let image = stitch_images(&downloaded_images);
+    let image = stitch_images(&downloaded_images)?;
 
-    write_images(&image, path, chapter_number);
+    write_images(&image, path, chapter_number)?;
+
+    Ok(())
 }
 
-fn get_image_links(html: &Html) -> VecDeque<WebtoonHtmlImageData> {
+fn get_image_links(html: &Html) -> Result<VecDeque<WebtoonHtmlImageData>> {
     let link_selector = Selector::parse(r#"img._images"#).unwrap();
     let mut links: VecDeque<WebtoonHtmlImageData> = VecDeque::new();
 
@@ -66,20 +78,20 @@ fn get_image_links(html: &Html) -> VecDeque<WebtoonHtmlImageData> {
         let width = link
             .value()
             .attr("width")
-            .unwrap()
+            .ok_or_else(|| anyhow!("Failed to locate width value in element"))?
             .to_string()
             .parse::<f64>()
-            .unwrap() as u32;
+            .context("Failed to parse image width as f64")? as u32;
 
         let height = link
             .value()
             .attr("height")
-            .unwrap()
+            .ok_or_else(|| anyhow!("Failed to locate height value in element"))?
             .to_string()
             .parse::<f64>()
-            .unwrap() as u32;
+            .context("Failed to parse image height as f64")? as u32;
 
-        let extension = parse_extension(&url);
+        let extension = parse_extension(&url)?;
 
         links.push_back(WebtoonHtmlImageData {
             url,
@@ -89,14 +101,14 @@ fn get_image_links(html: &Html) -> VecDeque<WebtoonHtmlImageData> {
         });
     }
 
-    links
+    Ok(links)
 }
 
-async fn download_links_async<'a>(
+fn download_links_async<'a>(
     webtoon_image_data: &'a VecDeque<WebtoonHtmlImageData>,
     url: &'a str,
     chapter_number: u16,
-) -> VecDeque<IntermediateImageInfo<'a>> {
+) -> Result<VecDeque<IntermediateImageInfo<'a>>> {
     let mut rng = thread_rng();
     // 1-5 seconds
     let random_wait = rng.gen_range(1..5);
@@ -104,7 +116,8 @@ async fn download_links_async<'a>(
     // So all the requests aren't sent at the same time
     thread::sleep(time::Duration::from_secs(random_wait));
 
-    let client = reqwest::Client::new();
+    // TODO: Move to builder
+    let client = reqwest::blocking::Client::new();
 
     let mut images: VecDeque<IntermediateImageInfo> = VecDeque::new();
 
@@ -116,7 +129,6 @@ async fn download_links_async<'a>(
                 .get(&image.url)
                 .header("referer", "https://www.webtoons.com/")
                 .send()
-                .await
             {
                 Err(_) => {
                     if retries > 0 {
@@ -124,20 +136,16 @@ async fn download_links_async<'a>(
                         thread::sleep(time::Duration::from_secs(wait));
                         wait *= 2;
                     } else {
-                        panic!("Cannot connect. Check URL: {}", image.url)
+                        bail!(
+                            "Cannot connect. Check URL: {}\nChapter: {chapter_number}",
+                            image.url
+                        );
                     }
                 }
                 Ok(ok) => break ok,
             }
         }
-        .bytes()
-        .await
-        .unwrap_or_else(|err| {
-            panic!(
-                "Error: {err}. Image Url: {} on Chapter {chapter_number}",
-                image.url
-            )
-        })
+        .bytes()?
         .to_vec();
 
         let height = image.height;
@@ -153,7 +161,7 @@ async fn download_links_async<'a>(
         });
     }
 
-    images
+    Ok(images)
 }
 
 fn url_builder(base_url: &str, chapter: u16) -> String {
@@ -169,22 +177,30 @@ fn url_builder(base_url: &str, chapter: u16) -> String {
     fully_formed
 }
 
-fn parse_extension(url: &str) -> String {
+fn parse_extension(url: &str) -> Result<String> {
     let path = Path::new(url);
 
-    path.extension()
-        .unwrap()
-        .to_owned()
-        .into_string()
-        .unwrap()
-        .split('?')
-        .collect::<Vec<_>>()[0]
-        .to_string()
+    if let Some(ext) = path.extension() {
+        let result = ext
+            .to_owned()
+            .into_string()
+            .expect("Failed to cast OsString to String")
+            .split('?')
+            .collect::<Vec<_>>()[0]
+            .to_string();
+
+        return Ok(result);
+    }
+
+    bail!("Failed to parse image file extension")
 }
 
-fn write_images(image: &BufferImage, path: &Path, chapter_number: u16) {
-    if !path.try_exists().expect("Check if chapter folder exists") {
-        fs::create_dir(path).expect("Create chapter folder");
+fn write_images(image: &BufferImage, path: &Path, chapter_number: u16) -> Result<()> {
+    if !path
+        .try_exists()
+        .context("Failed to check if chapter folder exists")?
+    {
+        fs::create_dir(path).context("failed to create chapter folder")?;
     }
 
     let name = path.join(chapter_number.to_string()).with_extension("png");
@@ -192,10 +208,12 @@ fn write_images(image: &BufferImage, path: &Path, chapter_number: u16) {
     image
         .buffer
         .save_with_format(name, image::ImageFormat::Png)
-        .expect("Write out final, large PNG");
+        .context("Failed top write out final, large PNG")?;
+
+    Ok(())
 }
 
-fn stitch_images(images: &VecDeque<IntermediateImageInfo<'_>>) -> BufferImage {
+fn stitch_images(images: &VecDeque<IntermediateImageInfo<'_>>) -> Result<BufferImage> {
     let min_width = images.get_min_width();
     let first_width = images.get_first_width();
     let max_height = images.calculate_max_height();
@@ -215,11 +233,11 @@ fn stitch_images(images: &VecDeque<IntermediateImageInfo<'_>>) -> BufferImage {
             "png" => image::ImageFormat::Png,
             "gif" => image::ImageFormat::Gif,
             "webp" => image::ImageFormat::WebP,
-            _ => panic!("Unhandled File Type"),
+            _ => bail!("Unhandled File Type, got {}", image.extension),
         };
 
         let holder = image::load_from_memory_with_format(&image.bytes, ext)
-            .expect("Error Decoding Jpeg, got {}");
+            .with_context(|| format!("Failed to load image from memory. URL: `{}`", image.url))?;
 
         if holder.width() > first_width {
             let resized = holder.resize(
@@ -230,18 +248,18 @@ fn stitch_images(images: &VecDeque<IntermediateImageInfo<'_>>) -> BufferImage {
 
             buffer
                 .copy_from(&resized.to_rgb8(), 0, offset)
-                .unwrap_or_else(|err| panic!("Error {err}: From: '{:?}'", image.url));
+                .with_context(|| format!("Failed to build image from: '{}'", image.url))?;
 
             offset += resized.height();
         } else {
             buffer
                 .copy_from(&holder.to_rgb8(), 0, offset)
-                .unwrap_or_else(|err| panic!("Error {err}: From: '{:?}'", image.url));
+                .with_context(|| format!("Failed to build image from: '{}'", image.url))?;
             offset += image.height;
         }
     }
 
-    BufferImage { buffer }
+    Ok(BufferImage { buffer })
 }
 
 #[derive(Debug)]
@@ -284,11 +302,7 @@ impl<'a> WebtoonImage for VecDeque<IntermediateImageInfo<'a>> {
     }
 
     fn get_first_width(&self) -> u32 {
-        return self
-            .iter()
-            .next()
-            .unwrap_or_else(|| panic!("Error from: {self:?}"))
-            .width;
+        self.iter().next().expect("Should not be empty").width
     }
 }
 

@@ -18,3 +18,9 @@ rand = { workspace = true }
 indicatif = { workspace = true }
 reqwest = { workspace = true }
 crossbeam = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+csv = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

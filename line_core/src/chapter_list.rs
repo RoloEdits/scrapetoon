@@ -1,24 +1,28 @@
+use anyhow::{anyhow, bail, Context, Result};
 use chrono::NaiveDate;
 use crossbeam::queue::SegQueue;
 use indicatif::ParallelProgressIterator;
-use project_core::ResponseFactory;
+use project_core::BlockingResponseFactory;
+use rand::prelude::*;
 use rayon::prelude::*;
 use scraper::{ElementRef, Html, Selector};
-
-use std::collections::LinkedList;
+use std::collections::VecDeque;
+use std::thread;
+use std::time::Duration;
 
 use crate::ChapterListInfo;
 
 ///# Panics
 ///
 /// Will panic if there was a response but at the same time, the html text somehow didn't come with it unwrapping to a None.
-#[must_use]
-pub fn parse(end: u16, input_url: &str) -> LinkedList<ChapterListInfo> {
+///
+/// # Errors
+pub fn parse(end: u16, input_url: &str) -> Result<VecDeque<ChapterListInfo>> {
     // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
     rayon::ThreadPoolBuilder::new()
-        .num_threads(6)
+        .num_threads(4)
         .build_global()
-        .unwrap();
+        .context("Couldn't create thread pool")?;
 
     let range: Vec<_> = (1..=end).collect();
     let total = range.len() as u64;
@@ -28,104 +32,130 @@ pub fn parse(end: u16, input_url: &str) -> LinkedList<ChapterListInfo> {
     range
         .into_par_iter()
         .progress_count(total)
-        .for_each(|page| {
+        .try_for_each(|page| {
             let url = format!("{input_url}&page={page}");
-            work(&url, &chapter_info);
-        });
+            if work(&url, &chapter_info).is_err() {
+                // TODO: Log
+                bail!("Failed to parse Page {page}")
+            }
+            Ok(())
+        })?;
 
-    let mut result: LinkedList<ChapterListInfo> = LinkedList::new();
+    let mut result: VecDeque<ChapterListInfo> = VecDeque::with_capacity(chapter_info.len());
 
     for info in chapter_info {
         result.push_back(info);
     }
 
-    result
+    Ok(result)
 }
 
-#[tokio::main]
-async fn work(url: &str, chapter_info: &SegQueue<ChapterListInfo>) {
-    if let Ok(response) = ResponseFactory::get(url).await {
-        let html = response.text().await.unwrap();
+fn work(url: &str, chapter_info: &SegQueue<ChapterListInfo>) -> Result<()> {
+    let response = BlockingResponseFactory::get(url)?;
+    let mut rng = thread_rng();
+    let rand = rng.gen_range(1..=3);
+    thread::sleep(Duration::from_millis(500 * rand));
 
-        parse_each_chapters_chapter_info(&html, chapter_info);
-    };
+    let html = response
+        .text()
+        .with_context(|| format!("Failed to text body result info at url: {url}"))?;
+
+    parse_each_chapters_chapter_info(&html, chapter_info)?;
+
+    Ok(())
 }
 
-fn parse_each_chapters_chapter_info(html: &str, chapter_info: &SegQueue<ChapterListInfo>) {
+fn parse_each_chapters_chapter_info(
+    html: &str,
+    chapter_info: &SegQueue<ChapterListInfo>,
+) -> Result<()> {
     let html = Html::parse_document(html);
-
-    let chapter_selector = Selector::parse("ul#_listUl>li").unwrap();
+    let chapter_selector =
+        Selector::parse("ul#_listUl>li").expect("Failed to parse Chapter Selector");
 
     for chapter in html.select(&chapter_selector) {
-        let chapter_number = parse_chapter_number(&chapter);
-        let likes = parse_chapter_like_amount(&chapter);
-        let date = parse_chapter_date(&chapter);
+        let chapter_number = parse_chapter_number(&chapter)?;
+        let likes = parse_chapter_like_amount(&chapter)?;
+        let date = parse_chapter_date(&chapter)?;
         chapter_info.push(ChapterListInfo {
-            chapter_number,
+            chapter: chapter_number,
             likes,
             date,
         });
     }
+
+    Ok(())
 }
 
-fn parse_chapter_number(html: &ElementRef) -> u16 {
-    let chapter_number_selector = Selector::parse("span.tx").unwrap();
+// TODO: Combine combine all implementations to use either ElementRef or HTML
+fn parse_chapter_number(html: &ElementRef) -> Result<u16> {
+    let chapter_number_selector =
+        Selector::parse("span.tx").expect("Failed to parse Chapter Number Selector");
 
-    let mut result: u16 = 0;
+    let chapter_number = html
+        .select(&chapter_number_selector)
+        .next()
+        .ok_or_else(|| anyhow!("No chapter number to parse"))?
+        .text()
+        .collect::<Vec<_>>();
 
-    for element in html.select(&chapter_number_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
+    let cleaned = chapter_number
+        .first()
+        .ok_or_else(|| anyhow!("No chapter number to parse"))?
+        .replace('#', "");
 
-        result = chapter_number.replace('#', "").parse::<u16>().unwrap();
-    }
+    let result = cleaned
+        .parse::<u16>()
+        .with_context(|| format!("Failed to parse {cleaned} into a u16"))?;
 
-    result
+    Ok(result)
 }
 
-fn parse_chapter_like_amount(html: &ElementRef) -> u32 {
-    let like_selector = Selector::parse(r#"span[class="like_area _likeitArea"]"#).unwrap();
+fn parse_chapter_like_amount(html: &ElementRef) -> Result<u32> {
+    let like_selector = Selector::parse(r#"span[class="like_area _likeitArea"]"#)
+        .expect("Failed to parse Like Selector");
 
-    let mut result: u32 = 0;
+    // Unsure what happens when a chapter has no likes
+    let element = html
+        .select(&like_selector)
+        .next()
+        .ok_or_else(|| anyhow!(format!("Failed to find likes element")))?;
 
-    for element in html.select(&like_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[1];
+    let chapter_number = element.text().collect::<Vec<_>>()[1].replace(',', "");
 
-        result = chapter_number.replace(',', "").parse::<u32>().unwrap();
-    }
+    let result = chapter_number
+        .parse::<u32>()
+        .with_context(|| format!("Failed to parse {chapter_number} to a u32"))?;
 
-    result
+    Ok(result)
 }
 
-fn parse_chapter_date(html: &ElementRef) -> String {
-    let date_selector = Selector::parse("span.date").unwrap();
+// TODO: Combine this with all other date selectors and just pass in the selector
+fn parse_chapter_date(html: &ElementRef) -> Result<String> {
+    let date_selector = Selector::parse("span.date").expect("Failed to parse date Selector");
 
-    let mut holder: Vec<&str> = Vec::with_capacity(9);
+    let raw_date = html
+        .select(&date_selector)
+        .next()
+        .ok_or_else(|| anyhow!("No date to parse"))?
+        .text()
+        .collect::<Vec<_>>()[0];
 
-    for element in html.select(&date_selector) {
-        let chapter_number = element.text().collect::<Vec<_>>()[0];
+    let datetime = NaiveDate::parse_from_str(raw_date, "%b %e, %Y")
+        .with_context(|| format!("Failed to parse {raw_date} to a date"))?;
 
-        holder.push(chapter_number);
-    }
+    // %b %e, %Y -> Jun 3, 2022
+    // %b %d, %Y -> Jun 03, 2022
+    // %F -> 2022-06-03 (ISO 8601)
+    let formatted = datetime.format("%F").to_string();
 
-    let mut result: String = String::new();
-
-    for date in holder {
-        let datetime = NaiveDate::parse_from_str(date, "%b %e, %Y").unwrap();
-
-        // %b %e, %Y -> Jun 3, 2022
-        // %b %d, %Y -> Jun 03, 2022
-        // %F -> 2022-06-03 (ISO 8601)
-        let formatted = datetime.format("%F").to_string();
-
-        result = formatted;
-    }
-
-    result
+    Ok(formatted)
 }
 
 #[cfg(test)]
 mod chapter_lists_parsing_tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn should_parse_chapter_number() {
@@ -152,7 +182,7 @@ mod chapter_lists_parsing_tests {
         let mut result = 0;
 
         for chapter in html.select(&chapter_selector) {
-            result = parse_chapter_number(&chapter);
+            result = parse_chapter_number(&chapter).unwrap();
         }
 
         assert_eq!(result, 24);
@@ -183,7 +213,7 @@ mod chapter_lists_parsing_tests {
         let mut result = 0;
 
         for chapter in html.select(&chapter_selector) {
-            result = parse_chapter_like_amount(&chapter);
+            result = parse_chapter_like_amount(&chapter).unwrap();
         }
 
         assert_eq!(result, 7_779);
@@ -214,7 +244,7 @@ mod chapter_lists_parsing_tests {
         let mut result = String::new();
 
         for chapter in html.select(&chapter_selector) {
-            result = parse_chapter_date(&chapter);
+            result = parse_chapter_date(&chapter).unwrap();
         }
 
         assert_eq!(result, "2022-11-20");

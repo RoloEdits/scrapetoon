@@ -1,59 +1,97 @@
+use anyhow::{anyhow, bail, Context, Result};
 use chrono::NaiveDate;
+
 use scraper::{ElementRef, Html, Selector};
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 
 use crate::UserComment;
 
 ///# Panics
 ///
 /// Will panic if there is no chapter number to parse, or if there is a non number attempting to be parsed..
-#[must_use]
-pub fn parse_chapter_number(html: &Html) -> u16 {
-    let chapter_number_selector = Selector::parse("span.tx").unwrap();
+///
+/// # Errors
+///
+///
+pub fn parse_chapter_number(html: &Html) -> Result<u16> {
+    if let Ok(chapter_number_selector) = Selector::parse("span.tx") {
+        let chapter_number = html
+            .select(&chapter_number_selector)
+            .next()
+            .ok_or_else(|| anyhow!("Should find a chapter number"))?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let chapter_number = html
-        .select(&chapter_number_selector)
-        .next()
-        .unwrap()
-        .text()
-        .collect::<Vec<_>>()[0];
+        let cleaned = chapter_number.replace('#', "");
 
-    chapter_number.replace('#', "").parse::<u16>().unwrap()
+        let result = cleaned
+            .parse::<u16>()
+            .with_context(|| format!("Failed to parse {cleaned} to a u16"))?;
+
+        return Ok(result);
+    }
+
+    bail!("Failed to create chapter number selector")
 }
 
 ///# Panics
 ///
 /// Will panic if there is no comment number to parse, or if there is a non number attempting to be parsed..
-#[must_use]
-pub fn parse_comment_count(html: &Html) -> u32 {
-    let comment_amount_selector = Selector::parse(r#"span[class="u_cbox_count"]"#).unwrap();
+///
+/// # Errors
+///
+///
+pub fn parse_comment_count(html: &Html) -> Result<u32> {
+    if let Ok(comment_amount_selector) = Selector::parse(r#"span[class="u_cbox_count"]"#) {
+        let comment_amount = html
+            .select(&comment_amount_selector)
+            .next()
+            .ok_or_else(|| anyhow!("Failed to find a comment amount to parse"))?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let chapter_number = html
-        .select(&comment_amount_selector)
-        .next()
-        .unwrap()
-        .text()
-        .collect::<Vec<_>>()[0];
+        let cleaned = comment_amount.replace(',', "");
 
-    chapter_number.replace(',', "").parse::<u32>().unwrap()
+        let result = cleaned
+            .parse::<u32>()
+            .with_context(|| format!("Failed to parse {cleaned} to a u32"))?;
+
+        return Ok(result);
+    }
+
+    bail!("Failed to find comment count selector")
 }
 
 ///# Panics
 ///
 /// Will panic if there is no user comments to parse.
-#[must_use]
-pub fn parse_users(html: &Html) -> LinkedList<UserComment> {
-    let mut comments: LinkedList<UserComment> = LinkedList::new();
+///
+/// # Errors
+///
+///
+pub fn parse_users(html: &Html) -> Result<VecDeque<UserComment>> {
+    let mut comments: VecDeque<UserComment> = VecDeque::new();
 
-    let comment_list_selector = Selector::parse(r#"ul[class="u_cbox_list"]>li"#).unwrap();
+    let comment_list_selector = Selector::parse(r#"ul[class="u_cbox_list"]>li"#)
+        .expect("`Comment List` Selector should be parsed");
 
-    let user_selector = Selector::parse(r#"span[class="u_cbox_nick"]"#).unwrap();
-    let comment_text_selector = Selector::parse(r#"span[class="u_cbox_contents"]"#).unwrap();
-    let comment_upvote_selector = Selector::parse(r#"em[class="u_cbox_cnt_recomm"]"#).unwrap();
-    let comment_downvote_selector = Selector::parse(r#"em[class="u_cbox_cnt_unrecomm"]"#).unwrap();
-    let comment_reply_count_selector =
-        Selector::parse(r#"span[class="u_cbox_reply_cnt"]"#).unwrap();
-    let comment_date_selector = Selector::parse(r#"span[class="u_cbox_date"]"#).unwrap();
+    let user_selector =
+        Selector::parse(r#"span[class="u_cbox_nick"]"#).expect("`User` Selector should be parsed");
+
+    let comment_text_selector = Selector::parse(r#"span[class="u_cbox_contents"]"#)
+        .expect("`Comment Text` Selector should be parsed");
+
+    let comment_upvote_selector = Selector::parse(r#"em[class="u_cbox_cnt_recomm"]"#)
+        .expect("`Comment Upvote` Selector should be parsed");
+
+    let comment_downvote_selector = Selector::parse(r#"em[class="u_cbox_cnt_unrecomm"]"#)
+        .expect("`Comment Downvote` Selector should be parsed");
+
+    let comment_reply_count_selector = Selector::parse(r#"span[class="u_cbox_reply_cnt"]"#)
+        .expect("`Comment Reply` Selector should be parsed");
+
+    let comment_date_selector = Selector::parse(r#"span[class="u_cbox_date"]"#)
+        .expect("`Comment Date` Selector should be parsed");
 
     for user_comment in html.select(&comment_list_selector) {
         let user = parse_user(user_comment, &user_selector);
@@ -75,104 +113,124 @@ pub fn parse_users(html: &Html) -> LinkedList<UserComment> {
         comments.push_back(user_comment);
     }
 
-    comments
+    Ok(comments)
 }
 
-fn parse_user(user_comment: ElementRef, user_selector: &Selector) -> String {
-    let comment_text = match user_comment.select(user_selector).next() {
-        Some(text) => text,
-        None => return "This user has been deleted.".to_string(),
-    }
-    .text()
-    .collect::<Vec<_>>()[0]
+fn parse_user(user_comment: ElementRef, user_selector: &Selector) -> Option<String> {
+    let comment_text = user_comment
+        .select(user_selector)
+        .next()?
+        .text()
+        .collect::<Vec<_>>()[0]
         .to_string();
 
-    comment_text
+    Some(comment_text)
 }
 
-fn parse_comment_post_date(user_comment: ElementRef, comment_date_selector: &Selector) -> String {
-    let comment_date = match user_comment.select(comment_date_selector).next() {
-        Some(date) => date,
-        None => return String::new(),
-    }
-    .text()
-    .collect::<Vec<_>>()[0];
-    let datetime = NaiveDate::parse_from_str(comment_date, "%b %e, %Y").unwrap();
+fn parse_comment_post_date(
+    user_comment: ElementRef,
+    comment_date_selector: &Selector,
+) -> Option<String> {
+    let comment_date = user_comment
+        .select(comment_date_selector)
+        .next()?
+        .text()
+        .collect::<Vec<_>>()[0];
+
+    let datetime = NaiveDate::parse_from_str(comment_date, "%b %e, %Y")
+        .unwrap_or_else(|_| panic!("Failed to parse {comment_date} to a date"));
 
     // %b %e, %Y -> Jun 3, 2022
     // %b %d, %Y -> Jun 03, 2022
     // %F -> 2022-06-03 (ISO 8601)
     let formatted_date = datetime.format("%F").to_string();
-    formatted_date
+
+    Some(formatted_date)
 }
 
 ///# Panics
 ///
-/// Will panic if there is no user reply count to parse, or if there is a non number attempting to be parsed.
+/// Will panic if there is a non number attempting to be parsed.
 #[must_use]
 pub fn parse_comment_reply_count(
     user_comment: ElementRef,
     comment_reply_count_selector: &Selector,
-) -> u16 {
-    let comment_reply_count = match user_comment.select(comment_reply_count_selector).next() {
-        Some(element) => element,
-        // When there are no replies.
-        None => return 0,
+) -> Option<u16> {
+    // TODO: Decide whether to return None or 0 for comments that have no replies.
+    if let Some(reply_count_element) = user_comment.select(comment_reply_count_selector).next() {
+        let cleaned = reply_count_element
+            .text()
+            .collect::<Vec<_>>()
+            .first()
+            .expect("Failed to fet first element for reply count")
+            // Once replies get past 999, a '+' is added. Need to remove to parse.
+            .replace('+', "");
+
+        let result = cleaned
+            .parse::<u16>()
+            .unwrap_or_else(|_| panic!("Should parse {cleaned} to u16"));
+
+        return Some(result);
     }
-    .text()
-    .collect::<Vec<_>>()[0]
-        // Once replies get past 999, a '+' is added. Need to remove to parse.
-        .replace('+', "")
-        .parse::<u16>()
-        .unwrap();
-    comment_reply_count
+
+    Some(0)
 }
 
 ///# Panics
 ///
-/// Will panic if there is no downvote to parse, or if there is a non number attempting to be parsed.
+/// Will panic if there is a non number attempting to be parsed.
 #[must_use]
 pub fn parse_comment_downvote(
     user_comment: ElementRef,
     comment_downvote_selector: &Selector,
-) -> u32 {
-    let comment_downvote = match user_comment.select(comment_downvote_selector).next() {
-        Some(upvote) => upvote,
-        None => return 0,
-    }
-    .text()
-    .collect::<Vec<_>>()[0]
+) -> Option<u32> {
+    let comment_downvote: Vec<_> = user_comment
+        .select(comment_downvote_selector)
+        .next()?
+        .text()
+        .collect();
+
+    let downvote = comment_downvote.first()?;
+
+    let result = downvote
         .parse::<u32>()
-        .unwrap();
-    comment_downvote
+        .unwrap_or_else(|_| panic!("Should parse {downvote} to u16"));
+
+    Some(result)
 }
 
 ///# Panics
 ///
-/// Will panic if there is no upvote to parse, or if there is a non number attempting to be parsed.
+/// Will panic if there is a non number attempting to be parsed.
 #[must_use]
-pub fn parse_comment_upvote(user_comment: ElementRef, comment_upvote_selector: &Selector) -> u32 {
-    let comment_upvote = match user_comment.select(comment_upvote_selector).next() {
-        Some(upvote) => upvote,
-        None => return 0,
-    }
-    .text()
-    .collect::<Vec<_>>()[0]
+pub fn parse_comment_upvote(
+    user_comment: ElementRef,
+    comment_upvote_selector: &Selector,
+) -> Option<u32> {
+    let comment_upvote = user_comment
+        .select(comment_upvote_selector)
+        .next()?
+        .text()
+        .collect::<Vec<_>>()[0]
         .parse::<u32>()
-        .unwrap();
-    comment_upvote
+        .expect("Should parse comment upvotes to u32");
+
+    Some(comment_upvote)
 }
 
 #[must_use]
-pub fn parse_comment_body(user_comment: ElementRef, comment_text_selector: &Selector) -> String {
-    let comment_text = match user_comment.select(comment_text_selector).next() {
-        Some(text) => text,
-        None => return "This comment has been deleted.".to_string(),
-    }
-    .text()
-    .collect::<Vec<_>>()[0]
+pub fn parse_comment_body(
+    user_comment: ElementRef,
+    comment_text_selector: &Selector,
+) -> Option<String> {
+    let comment_text = user_comment
+        .select(comment_text_selector)
+        .next()?
+        .text()
+        .collect::<Vec<_>>()[0]
         .to_string();
-    comment_text.replace('\n', " ")
+
+    Some(comment_text.replace('\n', " "))
 }
 
 #[cfg(test)]
@@ -180,6 +238,7 @@ mod parse_comments_tests {
     use scraper::Html;
 
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn should_parse_chapter_number() {
@@ -188,50 +247,74 @@ mod parse_comments_tests {
 
         let html = Html::parse_document(CHAPTER_NUMBER);
 
-        let result = parse_chapter_number(&html);
+        let result = parse_chapter_number(&html).unwrap();
 
         assert_eq!(result, 550);
     }
 
     #[test]
     fn should_parse_comment_replies() {
-        const COMMENT: &str = r##"<div class="u_cbox_area">
-        <div class="u_cbox_info">
+        const COMMENT: &str = r##"
+<div class="u_cbox_area">
+    <div class="u_cbox_info">
         <span class="u_cbox_info_main">
-        <span class="u_cbox_sns_icons u_cbox_sns_facebook">Facebook</span>
-        <span class="u_cbox_name"><span class="u_cbox_name_area">
-        <span class="u_cbox_nick_area">
-        <span class="u_cbox_nick">Kayla Hoang</span>
+            <span class="u_cbox_sns_icons u_cbox_sns_facebook">Facebook</span>
+            <span class="u_cbox_name"><span class="u_cbox_name_area">
+                    <span class="u_cbox_nick_area">
+                        <span class="u_cbox_nick">Kayla Hoang</span>
+                    </span>
+                </span>
+            </span>
         </span>
-        </span>
-        </span>
-        </span>
-        <span class="u_cbox_info_sub">
-        </span>
-        </div><div class="u_cbox_text_wrap">
-        <span class="u_cbox_contents" data-lang="en">Tower of God is my life, and my favorite webtoon! it's just...UGH! I can't explain. YOU HAVE TO READ IT😵😂😱</span>
-        </div>
-        <div class="u_cbox_info_base"><span class="u_cbox_date" data-value="2015-09-22T08:43:23+0900">Sep 21, 2015</span>
+        <span class="u_cbox_info_sub"></span>
+    </div>
+    <div class="u_cbox_text_wrap">
+        <span class="u_cbox_contents" data-lang="en">Tower of God is my life, and my favorite webtoon! it's just...UGH!
+            I can't explain. YOU HAVE TO READ IT😵😂😱</span>
+    </div>
+    <div class="u_cbox_info_base">
+        <span class="u_cbox_date" data-value="2015-09-22T08:43:23+0900">Sep 21, 2015</span>
         <span class="u_cbox_work_main">
-        <a href="#" class="u_cbox_btn_report" data-action="report#request" data-param="commentNo:'1427616',objectId:'w_95_2'" data-log="RPC.report"><span class="u_cbox_ico_bar">
-        </span><span class="u_cbox_ico_report"></span><span class="u_cbox_in_report">Report</span>
-        </a></span></div><div class="u_cbox_tool">
-        <a href="#" role="button" aria-expanded="false" class="u_cbox_btn_reply" data-action="reply#toggle" data-param="1427616" data-log="RPC.replyopen#RPC.replyclose">
-        <strong class="u_cbox_reply_txt">Reply</strong><span class="u_cbox_reply_cnt u_vc">0</span></a><div class="u_cbox_recomm_set"><strong class="u_vc">Like/Dislike</strong><a href="#" data-action="vote" data-param="mine:false,commentNo:'1427616',voteStatus:'SYMPATHY',objectId:'w_95_2',ticket:'webtoon'" data-log="RPC.sym#RPC.unsym" class="u_cbox_btn_recomm">
-        <span class="u_cbox_ico_recomm">Like</span><em class="u_cbox_cnt_recomm">49</em></a><a href="#" data-action="vote" data-param="mine:false,commentNo:'1427616',voteStatus:'ANTIPATHY',objectId:'w_95_2',ticket:'webtoon'" data-log="RPC.dis#RPC.undis" class="u_cbox_btn_unrecomm"><span class="u_cbox_ico_unrecomm">Dislike</span><em class="u_cbox_cnt_unrecomm">0</em>
-        </a></div></div><span class="u_cbox_comment_frame"><span class="u_cbox_ico_tip"></span><span class="u_cbox_comment_frame_top"><span class="u_cbox_comment_bg_r"></span><span class="u_cbox_comment_bg_l"></span></span><span class="u_cbox_comment_frame_bottom"><span class="u_cbox_comment_bg_r"></span><span class="u_cbox_comment_bg_l">
-        </span></span></span></div>"##;
+            <a href="#" class="u_cbox_btn_report" data-action="report#request"
+                data-param="commentNo:'1427616',objectId:'w_95_2'" data-log="RPC.report"><span class="u_cbox_ico_bar">
+                </span><span class="u_cbox_ico_report"></span><span class="u_cbox_in_report">Report</span>
+            </a></span>
+    </div>
+    <div class="u_cbox_tool">
+        <a href="#" role="button" aria-expanded="false" class="u_cbox_btn_reply" data-action="reply#toggle"
+            data-param="1427616" data-log="RPC.replyopen#RPC.replyclose">
+            <strong class="u_cbox_reply_txt">Reply</strong>
+            
+            
+            <span class="u_cbox_reply_cnt u_vc">0</span>
+            
+            
+        </a>
+        <div class="u_cbox_recomm_set"><strong class="u_vc">Like/Dislike</strong><a href="#" data-action="vote"
+                data-param="mine:false,commentNo:'1427616',voteStatus:'SYMPATHY',objectId:'w_95_2',ticket:'webtoon'"
+                data-log="RPC.sym#RPC.unsym" class="u_cbox_btn_recomm">
+                <span class="u_cbox_ico_recomm">Like</span><em class="u_cbox_cnt_recomm">49</em></a><a href="#"
+                data-action="vote"
+                data-param="mine:false,commentNo:'1427616',voteStatus:'ANTIPATHY',objectId:'w_95_2',ticket:'webtoon'"
+                data-log="RPC.dis#RPC.undis" class="u_cbox_btn_unrecomm"><span
+                    class="u_cbox_ico_unrecomm">Dislike</span><em class="u_cbox_cnt_unrecomm">0</em>
+            </a></div>
+    </div><span class="u_cbox_comment_frame"><span class="u_cbox_ico_tip"></span><span
+            class="u_cbox_comment_frame_top"><span class="u_cbox_comment_bg_r"></span><span
+                class="u_cbox_comment_bg_l"></span></span><span class="u_cbox_comment_frame_bottom"><span
+                class="u_cbox_comment_bg_r"></span><span class="u_cbox_comment_bg_l">
+            </span></span></span>
+</div>"##;
 
         let html = Html::parse_document(COMMENT);
 
-        let comment_reply_count_selector =
-            Selector::parse(r#"span[class="u_cbox_reply_cnt"]"#).unwrap();
+        let comment_reply_count_selector = Selector::parse(r#"span.u_cbox_reply_cnt"#).unwrap();
 
         let comment_list_selector = Selector::parse(r#"div.u_cbox_area"#).unwrap();
 
-        for user_comment in html.select(&comment_list_selector) {
+        if let Some(user_comment) = html.select(&comment_list_selector).next() {
             let result = parse_comment_reply_count(user_comment, &comment_reply_count_selector);
-            assert_eq!(result, 0);
+            assert_eq!(result, Some(0));
         }
     }
 
@@ -284,7 +367,7 @@ mod parse_comments_tests {
 
         let html = Html::parse_document(NUMBER);
 
-        let result = parse_comment_count(&html);
+        let result = parse_comment_count(&html).unwrap();
 
         assert_eq!(result, 7_391);
     }
@@ -373,16 +456,19 @@ mod parse_comments_tests {
 
         let html = Html::parse_document(USER_COMMENT_LIST);
 
-        let result = parse_users(&html);
+        let result = parse_users(&html).unwrap();
 
         assert_eq!(result.len(), 2);
 
         let check = result.into_iter().next().unwrap();
 
-        assert_eq!(check.body, "Hey Guys, this is the beginning of a legend.");
-        assert_eq!(check.upvotes, 63_591);
-        assert_eq!(check.downvotes, 295);
-        assert_eq!(check.reply_count, 114);
-        assert_eq!(check.post_date, "2014-11-06");
+        assert_eq!(
+            check.body,
+            Some(String::from("Hey Guys, this is the beginning of a legend."))
+        );
+        assert_eq!(check.upvotes, Some(63_591));
+        assert_eq!(check.downvotes, Some(295));
+        assert_eq!(check.reply_count, Some(114));
+        assert_eq!(check.post_date, Some(String::from("2014-11-06")));
     }
 }

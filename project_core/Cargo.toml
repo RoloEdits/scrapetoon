@@ -9,3 +9,8 @@ edition = "2021"
 reqwest = { workspace = true}
 chrono = { workspace = true}
 rand = { workspace = true}
+anyhow = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

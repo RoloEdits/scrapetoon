@@ -1,4 +1,4 @@
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 
 use line_core::UserComment;
 use project_core::SeriesConfiguration;
@@ -8,7 +8,7 @@ pub struct ChapterInfo {
     pub comments: u32,
     pub likes: u32,
     pub date: String,
-    pub user_comments: LinkedList<UserComment>,
+    pub user_comments: VecDeque<UserComment>,
     pub chapter_length: u32,
     pub skips_adjusted_count: u16,
 }
@@ -17,7 +17,7 @@ pub trait CommentSum {
     fn sum_total_comments(&self) -> u32;
 }
 
-impl CommentSum for LinkedList<ChapterInfo> {
+impl CommentSum for VecDeque<ChapterInfo> {
     fn sum_total_comments(&self) -> u32 {
         let mut accumulator = 0;
         for chapter in self {

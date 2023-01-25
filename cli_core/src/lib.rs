@@ -15,7 +15,7 @@ impl ProgressBarFactory {
             ProgressStyle::with_template(
                 "[{elapsed_precise}] [{wide_bar:.white/black} {pos}/{len}",
             )
-            .unwrap(),
+            .expect("Failed to style Progress Bar"),
         );
         bar
     }

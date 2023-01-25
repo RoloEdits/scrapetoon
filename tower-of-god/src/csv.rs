@@ -1,12 +1,12 @@
 use line_core::SeriesInfo;
 use static_assertions::assert_eq_size_val;
-use std::collections::LinkedList;
+use std::collections::VecDeque;
 use std::path::Path;
 use tower_of_god::config::{ChapterInfo, CommentSum};
 
 pub fn write(
     path: &Path,
-    chapter_info: &LinkedList<ChapterInfo>,
+    chapter_info: &VecDeque<ChapterInfo>,
     series_info: &SeriesInfo,
     filename: &str,
 ) {
@@ -72,12 +72,12 @@ pub fn write(
         let chapter_length = chapter.chapter_length.to_string();
 
         for comment in &chapter.user_comments {
-            let user = comment.user.as_str();
-            let comment_body = comment.body.as_str();
-            let post_date = comment.post_date.as_str();
-            let upvotes = comment.upvotes.to_string();
-            let downvotes = comment.downvotes.to_string();
-            let reply_count = comment.reply_count.to_string();
+            let user = comment.user.as_ref().unwrap().as_str();
+            let comment_body = comment.body.as_ref().unwrap().as_str();
+            let post_date = comment.post_date.as_ref().unwrap().as_str();
+            let upvotes = comment.upvotes.as_ref().unwrap().to_string();
+            let downvotes = comment.downvotes.as_ref().unwrap().to_string();
+            let reply_count = comment.reply_count.as_ref().unwrap().to_string();
 
             let record_data = [
                 title,
