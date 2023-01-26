@@ -5,7 +5,7 @@ use std::path::Path;
 use line_core::{DailyScheduleInfo, SeriesInfo};
 
 pub fn write_daily_schedule(path: &Path, daily_schedule: &VecDeque<DailyScheduleInfo>) {
-    let final_path = path.join("daily_schedule.csv");
+    let final_path = path.join("daily.csv");
     let mut writer = csv::Writer::from_path(final_path).unwrap();
 
     let header = [

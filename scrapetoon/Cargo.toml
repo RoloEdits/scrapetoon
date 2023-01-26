@@ -6,10 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-project_core = { path = "../project_core" }
-line_core = { path = "../line_core" }
-cli_core = { path = "../cli_core"}
-csv = { workspace = true }
+webtoons = { path = "../webtoons" }
+cli = { path = "../cli" }
 clap = { workspace = true }
 static_assertions = { workspace = true }
 anyhow = { workspace = true }

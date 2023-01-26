@@ -213,7 +213,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cli_core"
+name = "cli"
 version = "0.1.0"
 dependencies = [
  "clap",
@@ -390,6 +390,17 @@ checksum = "dfae75de57f2b2e85e8768c3ea840fd159c8f33e2b6522c7835b7abac81be16e"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "csv"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "csv 1.1.6",
+ "serde",
+ "serde_json",
+ "webtoons",
 ]
 
 [[package]]
@@ -1098,15 +1109,14 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
+ "csv 1.1.6",
  "regex",
  "scraper",
  "static_assertions",
  "thirtyfour",
  "tokio",
+ "webtoons",
 ]
 
 [[package]]
@@ -1126,30 +1136,6 @@ name = "libc"
 version = "0.2.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
-
-[[package]]
-name = "line_core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "cli_core",
- "crossbeam",
- "csv",
- "image",
- "indicatif",
- "mockall",
- "pretty_assertions",
- "project_core",
- "rand 0.8.5",
- "rayon",
- "regex",
- "reqwest",
- "scraper",
- "serde",
- "serde_json",
- "tokio",
-]
 
 [[package]]
 name = "link-cplusplus"
@@ -1186,15 +1172,14 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
+ "csv 1.1.6",
  "regex",
  "scraper",
  "static_assertions",
  "thirtyfour",
  "tokio",
+ "webtoons",
 ]
 
 [[package]]
@@ -1338,6 +1323,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61807f77802ff30975e01f4f071c8ba10c022052f98b3294119f3e615d13e5be"
 
 [[package]]
+name = "nu-ansi-term"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77a8165726e8236064dbb45459242600304b42a5ea24ee2948e18e023bf7ba84"
+dependencies = [
+ "overload",
+ "winapi",
+]
+
+[[package]]
 name = "num-integer"
 version = "0.1.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1457,6 +1452,12 @@ checksum = "628223faebab4e3e40667ee0b2336d34a5b960ff60ea743ddfdbcf7770bcfb66"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "overload"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "parking_lot"
@@ -1726,18 +1727,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "project_core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "pretty_assertions",
- "rand 0.8.5",
- "reqwest",
- "serde",
 ]
 
 [[package]]
@@ -2044,11 +2033,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
  "static_assertions",
+ "webtoons",
 ]
 
 [[package]]
@@ -2179,6 +2166,15 @@ checksum = "d98238b800e0d1576d8b6e3de32827c2d74bee68bb97748dcf5071fb53965432"
 dependencies = [
  "nodrop",
  "stable_deref_trait",
+]
+
+[[package]]
+name = "sharded-slab"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "900fba806f70c630b0a382d0d825e17a0f19fcd059a2ade1ff237bcddf446b31"
+dependencies = [
+ "lazy_static",
 ]
 
 [[package]]
@@ -2357,14 +2353,14 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
+ "csv 0.1.0",
  "regex",
  "scraper",
  "thirtyfour",
  "tokio",
+ "tracing-subscriber",
+ "webtoons",
 ]
 
 [[package]]
@@ -2429,6 +2425,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "thread_local"
+version = "1.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
+dependencies = [
+ "once_cell",
 ]
 
 [[package]]
@@ -2577,15 +2582,14 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
+ "csv 1.1.6",
  "regex",
  "scraper",
  "static_assertions",
  "thirtyfour",
  "tokio",
+ "webtoons",
 ]
 
 [[package]]
@@ -2602,7 +2606,19 @@ checksum = "8ce8c33a8d48bd45d624a6e523445fd21ec13d3653cd51f681abf67418f54eb8"
 dependencies = [
  "cfg-if",
  "pin-project-lite",
+ "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4017f8f45139870ca7e672686113917c71c7a6e02d4924eda67186083c03081a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2612,6 +2628,32 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24eb03ba0eab1fd845050058ce5e616558e8f8d8fca633e6b163fe25c797213a"
 dependencies = [
  "once_cell",
+ "valuable",
+]
+
+[[package]]
+name = "tracing-log"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "78ddad33d2d10b1ed7eb9d1f518a5674713876e97e5bb9b7345a7984fbb4f922"
+dependencies = [
+ "lazy_static",
+ "log",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-subscriber"
+version = "0.3.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6176eae26dd70d0c919749377897b54a9276bd7061339665dd68777926b5a70"
+dependencies = [
+ "nu-ansi-term",
+ "sharded-slab",
+ "smallvec",
+ "thread_local",
+ "tracing-core",
+ "tracing-log",
 ]
 
 [[package]]
@@ -2621,15 +2663,14 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
+ "csv 1.1.6",
  "regex",
  "scraper",
  "static_assertions",
  "thirtyfour",
  "tokio",
+ "webtoons",
 ]
 
 [[package]]
@@ -2678,15 +2719,14 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
- "cli_core",
- "csv",
- "line_core",
- "project_core",
+ "cli",
+ "csv 1.1.6",
  "regex",
  "scraper",
  "static_assertions",
  "thirtyfour",
  "tokio",
+ "webtoons",
 ]
 
 [[package]]
@@ -2717,6 +2757,12 @@ name = "utf-8"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
+
+[[package]]
+name = "valuable"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
 name = "vcpkg"
@@ -2861,6 +2907,30 @@ checksum = "f095d78192e208183081cc07bc5515ef55216397af48b873e5edcd72637fa1bd"
 dependencies = [
  "ring",
  "untrusted",
+]
+
+[[package]]
+name = "webtoons"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "cli",
+ "crossbeam",
+ "csv 1.1.6",
+ "image",
+ "indicatif",
+ "mockall",
+ "pretty_assertions",
+ "rand 0.8.5",
+ "rayon",
+ "regex",
+ "reqwest",
+ "scraper",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
