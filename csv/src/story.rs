@@ -2,6 +2,7 @@ use crate::CsvWrite;
 use anyhow::{Context, Result};
 use serde::Serialize;
 use std::path::Path;
+use tracing::info;
 use webtoons::story::models::Story;
 use webtoons::utils;
 
@@ -41,14 +42,18 @@ pub struct StoryRecord {
 
 impl CsvWrite for Vec<StoryRecord> {
     fn write(self, path: &Path, filename: &str) -> Result<()> {
+        info!("Writing to csv");
         let csv_name = format!("{filename}.csv");
         let mut writer = csv::Writer::from_path(path.join(csv_name)).unwrap();
 
         for data in self {
+            info!("Writing row");
             writer.serialize(data).context("Couldn't write to file.")?;
         }
 
         writer.flush().context("Couldn't flush buffer.")?;
+
+        info!("Flushed buffer");
 
         Ok(())
     }
@@ -58,9 +63,9 @@ pub trait IntoStoryRecord {
     fn into_record(self) -> Vec<StoryRecord>;
 }
 
-// TODO: Add Scrape Date
 impl IntoStoryRecord for Story {
     fn into_record(self) -> Vec<StoryRecord> {
+        info!("Making Story Record");
         let mut record: Vec<StoryRecord> = Vec::new();
 
         let total_comments = self.sum_comments();
@@ -117,6 +122,7 @@ impl IntoStoryRecord for Story {
             }
         }
 
+        info!("Finished making Story Record");
         record
     }
 }

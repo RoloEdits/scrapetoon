@@ -1,6 +1,6 @@
 mod models;
 
-use crate::factories::{BlockingReferClientFactory, BlockingResponseFactory};
+use crate::factories::BlockingReferClientFactory;
 use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use image::{GenericImage, ImageBuffer, RgbImage};
@@ -12,6 +12,7 @@ use reqwest::StatusCode;
 use scraper::{Html, Selector};
 use std::{fs, path::Path, thread};
 
+/// # Errors
 pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
     let path = Path::new(path);
 
@@ -29,7 +30,7 @@ pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
         .into_par_iter()
         .progress_count(total)
         .try_for_each(|chapter| {
-            if get_chapter_panels(url, path, chapter).is_err() {
+            if chapter_panels(url, path, chapter).is_err() {
                 // TODO: Log
                 bail!("Failed to parse Chapter {chapter}")
             }
@@ -39,10 +40,10 @@ pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
     Ok(())
 }
 
-fn get_chapter_panels(url: &str, path: &Path, chapter: u16) -> Result<()> {
+fn chapter_panels(url: &str, path: &Path, chapter: u16) -> Result<()> {
     let url = url_builder(url, chapter);
 
-    let response = BlockingResponseFactory::get(&url)?;
+    let response = BlockingReferClientFactory::get(&url)?;
 
     if response.status() != StatusCode::OK {
         return Ok(());
@@ -54,20 +55,20 @@ fn get_chapter_panels(url: &str, path: &Path, chapter: u16) -> Result<()> {
 
     let html = Html::parse_document(&body);
 
-    let links = get_image_links(&html)?;
+    let links = image_links(&html)?;
 
     let chapter_number = super::chapter_number(&html)?;
 
-    let downloaded_images = download_links_async(&links, &url, chapter_number)?;
+    let downloaded_images = download(&links, &url, chapter_number)?;
 
     let image = stitch_images(&downloaded_images)?;
 
-    write_images(&image, path, chapter_number)?;
+    write(&image, path, chapter_number)?;
 
     Ok(())
 }
 
-fn get_image_links(html: &Html) -> Result<Vec<WebtoonHtmlImageData>> {
+fn image_links(html: &Html) -> Result<Vec<WebtoonHtmlImageData>> {
     let link_selector = Selector::parse(r#"img._images"#).unwrap();
     let mut links: Vec<WebtoonHtmlImageData> = Vec::new();
 
@@ -103,10 +104,10 @@ fn get_image_links(html: &Html) -> Result<Vec<WebtoonHtmlImageData>> {
     Ok(links)
 }
 
-fn download_links_async<'a>(
+fn download<'a>(
     webtoon_image_data: &'a Vec<WebtoonHtmlImageData>,
     url: &'a str,
-    chapter_number: u16,
+    _chapter_number: u16,
 ) -> Result<Vec<IntermediateImageInfo<'a>>> {
     let mut rng = thread_rng();
     // 1-5 seconds
@@ -187,7 +188,7 @@ fn stitch_images(images: &Vec<IntermediateImageInfo<'_>>) -> Result<BufferImage>
     Ok(BufferImage { buffer })
 }
 
-fn write_images(image: &BufferImage, path: &Path, chapter_number: u16) -> Result<()> {
+fn write(image: &BufferImage, path: &Path, chapter_number: u16) -> Result<()> {
     if !path
         .try_exists()
         .context("Failed to check if chapter folder exists")?

@@ -8,6 +8,12 @@ edition = "2021"
 [dependencies]
 webtoons = { path = "../webtoons" }
 cli = { path = "../cli" }
+csv = { path = "../csv" }
 clap = { workspace = true }
-static_assertions = { workspace = true }
 anyhow = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing = { workspace = true }
+scraper = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

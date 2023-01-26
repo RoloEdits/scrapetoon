@@ -1,17 +1,17 @@
 pub mod models;
 
-use crate::factories::BlockingResponseFactory;
+use crate::factories::BlockingReferClientFactory;
 use anyhow::{anyhow, Context, Result};
 use models::Daily;
 use scraper::{ElementRef, Html, Selector};
-use std::collections::VecDeque;
 
 const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 
-pub fn parse() -> Result<VecDeque<Daily>> {
-    let mut series_list: VecDeque<Daily> = VecDeque::new();
+/// # Errors
+pub fn parse() -> Result<Vec<Daily>> {
+    let mut series_list: Vec<Daily> = Vec::new();
 
-    let response = BlockingResponseFactory::get(DAILY_SCHEDULE)
+    let response = BlockingReferClientFactory::get(DAILY_SCHEDULE)
         .context("Couldn't connect to Daily Schedule")?
         .text()
         .context("Couldn't get text body from html response")?;
@@ -24,7 +24,7 @@ pub fn parse() -> Result<VecDeque<Daily>> {
     Ok(series_list)
 }
 
-fn ongoing(html: &Html, series_list: &mut VecDeque<Daily>) -> Result<()> {
+fn ongoing(html: &Html, series_list: &mut Vec<Daily>) -> Result<()> {
     let ongoing_selector = Selector::parse("div#dailyList>div.daily_section")
         .expect("Failed to parse Ongoing Selector");
 
@@ -35,7 +35,7 @@ fn ongoing(html: &Html, series_list: &mut VecDeque<Daily>) -> Result<()> {
     Ok(())
 }
 
-fn completed(html: &Html, series_list: &mut VecDeque<Daily>) -> Result<()> {
+fn completed(html: &Html, series_list: &mut Vec<Daily>) -> Result<()> {
     let completed_selector =
         Selector::parse("div.comp>div.daily_section").expect("Failed to parse Completed Selector");
 
@@ -46,7 +46,7 @@ fn completed(html: &Html, series_list: &mut VecDeque<Daily>) -> Result<()> {
     Ok(())
 }
 
-fn week(week: &ElementRef, series_list: &mut VecDeque<Daily>) -> Result<()> {
+fn week(week: &ElementRef, series_list: &mut Vec<Daily>) -> Result<()> {
     let day = release_day(week)?;
     weekly_cards(week, &day, series_list)?;
     Ok(())
@@ -68,11 +68,7 @@ fn release_day(week: &ElementRef) -> Result<String> {
     Ok(day)
 }
 
-fn weekly_cards(
-    week: &ElementRef,
-    day: &str,
-    series_list: &mut VecDeque<Daily>,
-) -> Result<()> {
+fn weekly_cards(week: &ElementRef, day: &str, series_list: &mut Vec<Daily>) -> Result<()> {
     let card_list_selector = Selector::parse("ul.daily_card>li").unwrap();
 
     for card in week.select(&card_list_selector) {
@@ -94,7 +90,7 @@ fn weekly_cards(
         }
         .to_string();
 
-        series_list.push_back(Daily {
+        series_list.push(Daily {
             title,
             author,
             genre,
@@ -107,10 +103,7 @@ fn weekly_cards(
     Ok(())
 }
 
-fn completed_cards(
-    completed: &ElementRef,
-    series_list: &mut VecDeque<Daily>,
-) -> Result<()> {
+fn completed_cards(completed: &ElementRef, series_list: &mut Vec<Daily>) -> Result<()> {
     let card_list_selector = Selector::parse("ul.daily_card>li").unwrap();
 
     for card in completed.select(&card_list_selector) {
@@ -120,7 +113,7 @@ fn completed_cards(
         let total_likes = total_likes(&card)?;
         let status = is_completed(&card);
 
-        series_list.push_back(Daily {
+        series_list.push(Daily {
             title,
             author,
             genre,

@@ -21,7 +21,6 @@ impl ProgressBarFactory {
     }
 }
 
-// TODO: In theory I should be able to get rid of this after project restructure
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
 pub struct StoryCliArgs {

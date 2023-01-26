@@ -1,7 +1,22 @@
-use project_core::regex;
-use scraper::{Html, Selector};
+#![allow(unused)]
 
-pub fn parse_meaningful_chapter_number(html: &Html) -> u16 {
+use scraper::{Html, Selector};
+use webtoons::regex;
+
+pub const fn season(html: &Html, chapter: u16) -> Option<u8> {
+    None
+}
+
+pub const fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
+    None
+}
+
+pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+    None
+}
+
+// TODO: Figure out what to do with adjusted chapter numbers
+pub fn title_chapter_number(html: &Html) -> u16 {
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
     let regex = regex![r"Episode\s(\d+)"];
@@ -27,8 +42,9 @@ pub fn parse_meaningful_chapter_number(html: &Html) -> u16 {
 }
 
 #[cfg(test)]
-mod tests {
+mod unordinary_tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn should_parse_meaningful_chapter_number() {
@@ -40,8 +56,21 @@ mod tests {
 
         let html1 = Html::parse_document(CHAPTER_NUMBER1);
 
-        let result1 = parse_meaningful_chapter_number(&html1);
+        let result1 = title_chapter_number(&html1);
 
         assert_eq!(result1, 78);
+    }
+
+    #[test]
+    fn should_produce_season_number() {
+        todo!()
+    }
+    #[test]
+    fn should_produce_season_chapter_number() {
+        todo!()
+    }
+    #[test]
+    fn should_produce_arc() {
+        todo!()
     }
 }

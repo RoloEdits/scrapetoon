@@ -2,7 +2,7 @@ pub mod chapter;
 mod chapter_list;
 pub mod models;
 
-use crate::factories::BlockingResponseFactory;
+use crate::factories::BlockingReferClientFactory;
 use crate::{regex, Arc, Season, SeasonChapter, Skip};
 use anyhow::{anyhow, bail, Context, Result};
 use core::time;
@@ -56,7 +56,7 @@ pub fn parse(
 
 // Series Page
 fn story_page(url: &str) -> Result<StoryPage> {
-    let html = BlockingResponseFactory::get(url)?
+    let html = BlockingReferClientFactory::get(url)?
         .text()
         .context("Failed to get HTML body as text")?;
 

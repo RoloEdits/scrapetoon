@@ -6,8 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thirtyfour = { workspace = true }
-tokio = { workspace = true }
 scraper = { workspace = true }
 chrono = { workspace = true }
 regex = { workspace = true }
@@ -17,3 +15,7 @@ webtoons = { path = "../../webtoons" }
 cli = { path = "../../cli" }
 anyhow = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }

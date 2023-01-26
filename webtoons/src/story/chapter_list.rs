@@ -1,4 +1,6 @@
-use crate::factories::BlockingResponseFactory;
+#![allow(unused)]
+
+use crate::factories::BlockingReferClientFactory;
 use anyhow::{anyhow, bail, Context, Result};
 use chrono::NaiveDate;
 use crossbeam::queue::SegQueue;
@@ -47,7 +49,7 @@ pub fn parse(end: u16, input_url: &str) -> Result<VecDeque<ChapterList>> {
 }
 
 fn list(url: &str, chapter_info: &SegQueue<ChapterList>) -> Result<()> {
-    let response = BlockingResponseFactory::get(url)?;
+    let response = BlockingReferClientFactory::get(url)?;
     let mut rng = thread_rng();
     let rand = rng.gen_range(1..=3);
     thread::sleep(Duration::from_millis(500 * rand));

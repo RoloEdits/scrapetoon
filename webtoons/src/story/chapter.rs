@@ -4,18 +4,14 @@ mod likes;
 pub mod models;
 pub mod panels;
 
-use crate::factories::{BlockingReferClientFactory, BlockingResponseFactory};
+use crate::factories::BlockingReferClientFactory;
 use crate::story::chapter::models::Chapter;
-use crate::{utils, Arc, Season, SeasonChapter, Skip};
-use anyhow::{anyhow, bail, Context, Result};
+use crate::{Arc, Season, SeasonChapter, Skip};
+use anyhow::{bail, Context, Result};
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
-use std::borrow::Borrow;
-use std::thread;
-use std::time::Duration;
-use tracing::info;
 
 /// # Errors
 pub fn parse(
@@ -29,7 +25,7 @@ pub fn parse(
 ) -> Result<Vec<Chapter>> {
     // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
     rayon::ThreadPoolBuilder::new()
-        .num_threads(12)
+        .num_threads(8)
         .build_global()
         .context("Couldn't create thread pool")?;
 
@@ -55,8 +51,6 @@ fn chapter(
     skip: Skip,
 ) -> Option<Chapter> {
     let url = chapter_url(id, chapter);
-
-    let text = connect_to_chapter(&url).unwrap();
 
     let response = BlockingReferClientFactory::get(&url).unwrap();
 
@@ -127,14 +121,6 @@ fn chapter_url(id: u32, chapter: u16) -> String {
     format!("https://www.webtoons.com/en/*/*/*/viewer?title_no={id}&episode_no={chapter}")
 }
 
-fn connect_to_chapter(url: &str) -> Result<String> {
-    let response = BlockingReferClientFactory::get(url)?;
-
-    let text = response.text()?; //.expect("Failed to get text from response")
-
-    Ok(text)
-}
-
 #[cfg(test)]
 mod parse_comments_tests {
     use super::*;
@@ -160,13 +146,5 @@ mod parse_comments_tests {
         let result = chapter_url(95, 2);
 
         assert_eq!(CHAPTER_NUMBER, result);
-    }
-
-    #[test]
-    fn should_connect_to_tog_chap_1() {
-        let url = chapter_url(95, 1);
-        let text = connect_to_chapter(&url).unwrap();
-
-        assert_eq!("", text);
     }
 }

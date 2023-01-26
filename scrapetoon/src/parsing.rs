@@ -14,7 +14,7 @@ pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
 }
 
 #[cfg(test)]
-mod the_god_of_high_school_tests {
+mod scraper_tests {
     use super::*;
     use pretty_assertions::assert_eq;
 

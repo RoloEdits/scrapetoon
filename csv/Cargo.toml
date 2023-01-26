@@ -11,3 +11,4 @@ serde = { workspace = true }
 csv = { workspace = true }
 serde_json = { workspace = true }
 webtoons = {path = "../webtoons"}
+tracing = { workspace = true }

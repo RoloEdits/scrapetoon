@@ -1,30 +1,37 @@
-use project_core::regex;
-use scraper::{Html, Selector};
+#![allow(unused)]
 
-pub fn parse_season_number(html: &Html) -> u8 {
-    let title_selector = Selector::parse("h1.subj_episode").unwrap();
+use scraper::{Html, Selector};
+use webtoons::regex;
+
+pub fn season(html: &Html, chapter: u16) -> Option<u8> {
+    let title_selector = Selector::parse("h1.subj_episode").expect("Invalid title selector");
 
     let regex = regex![r"\(S(\d)\)"];
 
     let title = html
         .select(&title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
+        .next()?
         .text()
         .collect::<Vec<_>>()[0];
 
     let season = match regex.captures(title) {
         Some(cap) => cap,
-        None => return 1,
+        None => return Some(1),
     }
-    .get(1)
-    .unwrap()
+    .get(1)?
     .as_str()
     .parse::<u8>()
-    .unwrap();
+    .expect("Failed to parse season number from title");
 
-    season
+    Some(season)
+}
+
+pub const fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
+    None
+}
+
+pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+    None
 }
 
 pub fn parse_meaningful_chapter_number(html: &Html) -> u16 {
@@ -53,11 +60,12 @@ pub fn parse_meaningful_chapter_number(html: &Html) -> u16 {
 }
 
 #[cfg(test)]
-mod tests {
+mod lore_olympus_tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
-    fn should_parse_season_number() {
+    fn should_produce_season_number() {
         const SEASON_NUMBER: &str = r#"<div class="subj_info">
 						<a href="https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320" class="subj NPI=a:end,g:en_en" title="Lore Olympus">Lore Olympus</a>
 						<span class="ico_arr2"></span>
@@ -73,11 +81,21 @@ mod tests {
         let html = Html::parse_document(SEASON_NUMBER);
         let html2 = Html::parse_document(SEASON_NUMBER2);
 
-        let season_number = parse_season_number(&html);
-        let season_number2 = parse_season_number(&html2);
+        let season_number = season(&html, 0).unwrap();
+        let season_number2 = season(&html2, 0).unwrap();
 
         assert_eq!(season_number, 3);
         assert_eq!(season_number2, 1);
+    }
+
+    #[test]
+    fn should_produce_season_chapter_number() {
+        todo!()
+    }
+
+    #[test]
+    fn should_produce_arc() {
+        todo!()
     }
 
     #[test]

@@ -18,7 +18,7 @@ pub enum Source {
     },
 
     /// Scrapes a stories page
-    Page {
+    Story {
         /// Path to save the output file
         #[arg(short = 'o', long = "output")]
         path: String,
@@ -27,7 +27,11 @@ pub enum Source {
         #[arg(short, long)]
         url: String,
 
-        /// The final page, where the story starts
+        /// The earliest chapter
+        #[arg(short = 's', long = "start")]
+        start: u16,
+
+        /// The latest chapter
         #[arg(short = 'e', long = "end")]
         end: u16,
     },

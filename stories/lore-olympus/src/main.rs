@@ -1,29 +1,40 @@
-use crate::csv::write;
+mod parsing;
+
 use anyhow::Result;
 use clap::Parser;
-use cli_core::StoryCliArgs;
-use lore_olympus::config;
-use project_core::path_enforcer;
+use cli::StoryCliArgs;
+use csv::story::IntoStoryRecord;
+use csv::CsvWrite;
+use webtoons::story;
+use webtoons::utils;
 
-mod csv;
+// #13: Message and Concept Art
+// #18: Q&A
+// #31: Hiatus special short
+// #47: QnA
+// #120: Season 1 Recap
+pub const TO_SKIP: fn(u16) -> bool =
+    |chapter: u16| -> bool { matches!(chapter, 13 | 18 | 31 | 47 | 120) };
+
+const PAGE_URL: &str = "https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320";
 
 fn main() -> Result<()> {
     let args = StoryCliArgs::parse();
+    tracing_subscriber::fmt::init();
 
-    let (series_info, parsed_chapters) = lore_olympus::parse_chapters(
+    let (story, kebab_title) = story::parse(
         args.start,
         args.end,
-        args.pages,
-        &config::CONFIG,
-        config::TO_SKIP,
+        PAGE_URL,
+        parsing::season,
+        parsing::season_chapter,
+        parsing::arc,
+        TO_SKIP,
     )?;
 
-    write(
-        path_enforcer(&args.output)?,
-        &parsed_chapters,
-        &series_info,
-        config::CONFIG.filename,
-    );
+    let path = utils::path_enforcer(&args.output)?;
+
+    story.into_record().write(path, &kebab_title)?;
 
     Ok(())
 }

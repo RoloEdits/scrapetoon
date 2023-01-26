@@ -1,28 +1,39 @@
+mod parsing;
+
 use anyhow::Result;
 use clap::Parser;
-use cli_core::StoryCliArgs;
-use project_core::path_enforcer;
-use unordinary::config;
+use cli::StoryCliArgs;
+use csv::story::IntoStoryRecord;
+use csv::CsvWrite;
+use webtoons::story;
+use webtoons::utils;
 
-mod csv;
+const TO_SKIP: fn(u16) -> bool = |chapter: u16| -> bool {
+    matches!(
+        chapter,
+        1 | 37 | 48 | 80 | 81 | 82 | 162 | 163 | 164 | 165 | 166 | 246 | 247
+    )
+};
+
+const PAGE_URL: &str = "https://www.webtoons.com/en/super-hero/unordinary/list?title_no=679";
 
 fn main() -> Result<()> {
     let args = StoryCliArgs::parse();
+    tracing_subscriber::fmt::init();
 
-    let (series_info, parsed_chapters) = unordinary::parse_chapters(
+    let (story, kebab_title) = story::parse(
         args.start,
         args.end,
-        args.pages,
-        &config::CONFIG,
-        config::TO_SKIP,
+        PAGE_URL,
+        parsing::season,
+        parsing::season_chapter,
+        parsing::arc,
+        TO_SKIP,
     )?;
 
-    csv::write(
-        path_enforcer(&args.output)?,
-        &parsed_chapters,
-        &series_info,
-        config::CONFIG.filename,
-    );
+    let path = utils::path_enforcer(&args.output)?;
+
+    story.into_record().write(path, &kebab_title)?;
 
     Ok(())
 }

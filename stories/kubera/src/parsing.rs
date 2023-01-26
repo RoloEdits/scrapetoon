@@ -1,58 +1,53 @@
-use project_core::regex;
-use scraper::{Html, Selector};
+#![allow(unused)]
 
-pub fn parse_season_number(html: &Html) -> u8 {
+use scraper::{Html, Selector};
+use webtoons::regex;
+
+pub fn season(html: &Html, chapter: u16) -> Option<u8> {
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
     let regex = regex![r"Season\s(\d)"];
 
     let title = html
         .select(&title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
+        .next()?
         .text()
         .collect::<Vec<_>>()[0];
 
     let season = match regex.captures(title) {
         Some(cap) => cap,
-        None => return 1,
+        None => return Some(1),
     }
-    .get(1)
-    .unwrap()
+    .get(1)?
     .as_str()
     .parse::<u8>()
-    .unwrap();
+    .expect("Failed to parse season from title");
 
-    season
+    Some(season)
 }
 
-pub fn parse_season_chapter_number(html: &Html) -> u16 {
+pub fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
     let regex = regex![r"Ep.\s(\d+)"];
 
     let title = html
         .select(&title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
+        .next()?
         .text()
         .collect::<Vec<_>>()[0];
 
     let season_chapter = regex
-        .captures(title)
-        .unwrap()
-        .get(1)
-        .unwrap()
+        .captures(title)?
+        .get(1)?
         .as_str()
         .parse::<u16>()
         .unwrap();
 
-    season_chapter
+    Some(season_chapter)
 }
 
-pub fn parse_arc_title(html: &Html) -> String {
+pub fn arc(html: &Html, chapter: u16) -> Option<String> {
     let arc_title_selector = Selector::parse("h1.subj_episode").unwrap();
 
     // TODO: Figure out why last character is being removed from capture group
@@ -60,24 +55,23 @@ pub fn parse_arc_title(html: &Html) -> String {
 
     let title = html
         .select(&arc_title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
+        .next()?
         .text()
         .collect::<Vec<_>>()[0];
 
-    let arc_title = regex.captures(title).unwrap().get(1).unwrap().as_str();
+    let arc_title = regex.captures(title)?.get(1)?.as_str();
 
-    arc_title.trim().to_string()
+    Some(arc_title.trim().to_string())
 }
 
 #[cfg(test)]
-mod tests {
+mod kubera_tests {
 
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
-    fn should_parse_season_number() {
+    fn should_produce_season_number() {
         const SEASON_NUMBER1: &str = r#"<div class="subj_info">
 						<a href="https://www.webtoons.com/en/fantasy/kubera/list?title_no=83" class="subj NPI=a:end,g:en_en" title="Kubera">Kubera</a>
 						<span class="ico_arr2"></span>
@@ -100,9 +94,9 @@ mod tests {
         let html2 = Html::parse_document(SEASON_NUMBER2);
         let html3 = Html::parse_document(SEASON_NUMBER3);
 
-        let season_number1 = parse_season_number(&html1);
-        let season_number2 = parse_season_number(&html2);
-        let season_number3 = parse_season_number(&html3);
+        let season_number1 = season(&html1, 0).unwrap();
+        let season_number2 = season(&html2, 0).unwrap();
+        let season_number3 = season(&html3, 0).unwrap();
 
         assert_eq!(season_number1, 1);
         assert_eq!(season_number2, 2);
@@ -110,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    fn should_parse_season_chapter_number() {
+    fn should_produce_season_chapter_number() {
         const SEASON_CHAPTER_NUMBER1: &str = r##"<div class="subj_info">
 						<a href="https://www.webtoons.com/en/fantasy/kubera/list?title_no=83" class="subj NPI=a:end,g:en_en" title="Kubera">Kubera</a>
 						<span class="ico_arr2"></span>
@@ -127,16 +121,16 @@ mod tests {
 
         let html2 = Html::parse_document(SEASON_CHAPTER_NUMBER2);
 
-        let result1 = parse_season_chapter_number(&html1);
+        let result1 = season_chapter(&html1, 0).unwrap();
 
-        let result2 = parse_season_chapter_number(&html2);
+        let result2 = season_chapter(&html2, 0).unwrap();
 
         assert_eq!(result1, 50);
         assert_eq!(result2, 165);
     }
 
     #[test]
-    fn should_parse_arc_title() {
+    fn should_produce_arc() {
         const ARC_TITLE1: &str = r##"<div class="subj_info">
 						<a href="https://www.webtoons.com/en/fantasy/kubera/list?title_no=83" class="subj NPI=a:end,g:en_en" title="Kubera">Kubera</a>
 						<span class="ico_arr2"></span>
@@ -153,9 +147,9 @@ mod tests {
 
         let html2 = Html::parse_document(ARC_TITLE2);
 
-        let result1 = parse_arc_title(&html1);
+        let result1 = arc(&html1, 0).unwrap();
 
-        let result2 = parse_arc_title(&html2);
+        let result2 = arc(&html2, 0).unwrap();
 
         assert_eq!(result1, "Prologue");
         assert_eq!(result2, "A Girl With a God's Name");

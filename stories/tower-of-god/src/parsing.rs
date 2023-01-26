@@ -1,9 +1,11 @@
-use project_core::regex;
+#![allow(unused)]
+
 use scraper::{Html, Selector};
+use webtoons::regex;
 
 // Story specific parsing implementations go here.
 
-pub fn parse_season_number(html: &Html) -> u8 {
+pub fn season(html: &Html, chapter: u16) -> Option<u8> {
     // input eg. '[Season 3] Ep. 133'
 
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
@@ -16,9 +18,7 @@ pub fn parse_season_number(html: &Html) -> u8 {
 
     let title = html
         .select(&title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
+        .next()?
         .text()
         .collect::<Vec<_>>()[0];
 
@@ -31,10 +31,10 @@ pub fn parse_season_number(html: &Html) -> u8 {
         .parse::<u8>()
         .unwrap();
 
-    season
+    Some(season)
 }
 
-pub fn parse_season_chapter_number(html: &Html) -> u16 {
+pub fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
     // input eg. '[Season 3] Ep. 133'
 
     let title_selector = Selector::parse("h1.subj_episode").unwrap();
@@ -48,31 +48,31 @@ pub fn parse_season_chapter_number(html: &Html) -> u16 {
 
     let title = html
         .select(&title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
+        .next()?
         .text()
         .collect::<Vec<_>>()[0];
 
     let season_chapter = regex
-        .captures(title)
-        .unwrap()
-        .get(1)
-        .unwrap()
+        .captures(title)?
+        .get(1)?
         .as_str()
         .parse::<u16>()
         .unwrap();
 
-    season_chapter
+    Some(season_chapter)
+}
+
+pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+    None
 }
 
 #[cfg(test)]
-mod tests {
-
+mod tower_of_god_tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
-    fn should_parse_season_number() {
+    fn should_produce_season_number() {
         const SEASON_NUMBER: &str = r#"<div class="subj_info">
         <a href="https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95" class="subj NPI=a:end,g:en_en" title="Tower of God">Tower of God</a>
         <span class="ico_arr2"></span>
@@ -81,13 +81,13 @@ mod tests {
 
         let html = Html::parse_document(SEASON_NUMBER);
 
-        let season_number = parse_season_number(&html);
+        let season_number = season(&html, 0).unwrap();
 
         assert_eq!(season_number, 3);
     }
 
     #[test]
-    fn should_parse_season_chapter_number() {
+    fn should_produce_season_chapter_number() {
         const SEASON_CHAPTER_NUMBER1: &str = r##"<div class="subj_info">
         <a href="https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95" class="subj NPI=a:end,g:en_en" title="Tower of God">Tower of God</a>
         <span class="ico_arr2"></span>
@@ -104,9 +104,9 @@ mod tests {
 
         let html2 = Html::parse_document(SEASON_CHAPTER_NUMBER2);
 
-        let result1 = parse_season_chapter_number(&html1);
+        let result1 = season_chapter(&html1, 0).unwrap();
 
-        let result2 = parse_season_chapter_number(&html2);
+        let result2 = season_chapter(&html2, 0).unwrap();
 
         assert_eq!(result1, 133);
         assert_eq!(result2, 1);

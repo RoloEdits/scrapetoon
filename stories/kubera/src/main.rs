@@ -1,28 +1,34 @@
+mod parsing;
+
 use anyhow::Result;
 use clap::Parser;
-use cli_core::StoryCliArgs;
-use kubera::config;
-use project_core::path_enforcer;
+use cli::StoryCliArgs;
+use csv::story::IntoStoryRecord;
+use csv::CsvWrite;
+use webtoons::story;
+use webtoons::utils;
 
-mod csv;
+pub const TO_SKIP: fn(u16) -> bool = |chapter: u16| -> bool { matches!(chapter, |102| 267 | 284 | 285) };
+
+const PAGE_URL: &str = "https://www.webtoons.com/en/fantasy/kubera/list?title_no=83";
 
 fn main() -> Result<()> {
     let args = StoryCliArgs::parse();
+    tracing_subscriber::fmt::init();
 
-    let (series_info, parsed_chapters) = kubera::parse_chapters(
+    let (story, kebab_title) = story::parse(
         args.start,
         args.end,
-        args.pages,
-        &config::CONFIG,
-        config::TO_SKIP,
+        PAGE_URL,
+        parsing::season,
+        parsing::season_chapter,
+        parsing::arc,
+        TO_SKIP,
     )?;
 
-    csv::write(
-        path_enforcer(&args.output)?,
-        &parsed_chapters,
-        &series_info,
-        config::CONFIG.filename,
-    );
+    let path = utils::path_enforcer(&args.output)?;
+
+    story.into_record().write(path, &kebab_title)?;
 
     Ok(())
 }
