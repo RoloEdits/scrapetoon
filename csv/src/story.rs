@@ -21,11 +21,11 @@ pub struct StoryRecord {
     pub season_chapter: Option<u16>,
     pub arc: Option<String>,
     pub length: u32,
-    pub comment_amount: u32,
+    pub comments: u32,
     pub total_comments: u32,
-    pub reply_amount: u32,
+    pub replies: u32,
     pub total_replies: u32,
-    pub like_amount: u32,
+    pub likes: u32,
     pub total_likes: u32,
     pub published: Option<String>,
     pub username: String,
@@ -34,7 +34,7 @@ pub struct StoryRecord {
     pub auth_provider: String,
     pub upvotes: u32,
     pub downvotes: u32,
-    pub replies: u32,
+    pub comment_replies: u32,
     pub post_date: String,
     pub contents: String,
     pub scrape_date: String,
@@ -44,7 +44,8 @@ impl CsvWrite for Vec<StoryRecord> {
     fn write(self, path: &Path, filename: &str) -> Result<()> {
         info!("Writing to csv");
         let csv_name = format!("{filename}.csv");
-        let mut writer = csv::Writer::from_path(path.join(csv_name)).unwrap();
+        let mut writer = csv::Writer::from_path(path.join(csv_name))
+            .context("File is open in another application")?;
 
         for data in self {
             info!("Writing row");
@@ -81,7 +82,8 @@ impl IntoStoryRecord for Story {
         let subscribers = self.story_page.subscribers;
         let rating = self.story_page.rating;
 
-        let utc = utils::get_current_utc_date();
+        // TODO: Look into putting this per chapter so each chapters date is logged
+        let utc = utils::get_current_utc_date_verbose();
 
         for chapter in self.chapters {
             for comment in chapter.user_comments {
@@ -99,11 +101,11 @@ impl IntoStoryRecord for Story {
                     season_chapter: chapter.season_chapter,
                     arc: chapter.arc.clone(),
                     length: chapter.length,
-                    comment_amount: chapter.comments,
+                    comments: chapter.comments,
                     total_comments,
-                    reply_amount: chapter.replies,
+                    replies: chapter.replies,
                     total_replies,
-                    like_amount: chapter.likes,
+                    likes: chapter.likes,
                     total_likes,
                     published: chapter.published.clone(),
                     username: comment.username,
@@ -112,10 +114,10 @@ impl IntoStoryRecord for Story {
                     auth_provider: comment.auth_provider,
                     upvotes: comment.upvotes,
                     downvotes: comment.downvotes,
-                    replies: comment.replies,
+                    comment_replies: comment.replies,
                     post_date: comment.post_date,
                     contents: comment.contents,
-                    scrape_date: utc.clone(), // <---------
+                    scrape_date: utc.clone(),
                 };
 
                 record.push(converted);
@@ -160,5 +162,67 @@ impl SumLikes for Story {
         self.chapters
             .iter()
             .fold(0, |acc, chapter| acc + chapter.likes)
+    }
+}
+
+#[cfg(test)]
+mod story_csv_tests {
+    use super::*;
+    use webtoons::story::chapter::comments::models::UserComment;
+    use webtoons::story::chapter::models::Chapter;
+    use webtoons::story::models::StoryPage;
+
+    #[test]
+    fn should_convert_to_story_record_one_to_one() {
+        let story_page = StoryPage {
+            title: "Tower of God".to_string(),
+            author: "SIU".to_string(),
+            genre: "Fantasy".to_string(),
+            status: "Hiatus".to_string(),
+            release_day: "Sunday".to_string(),
+            views: 0,
+            subscribers: 0,
+            rating: 0.0,
+        };
+
+        let user_comments = vec![UserComment {
+            username: "".to_string(),
+            replies: 0,
+            upvotes: 0,
+            downvotes: 0,
+            contents: "".to_string(),
+            profile_type: "".to_string(),
+            auth_provider: "".to_string(),
+            country: "".to_string(),
+            post_date: "".to_string(),
+        }];
+
+        let chapters = vec![Chapter {
+            number: 1,
+            likes: 4_000,
+            length: 2_000,
+            comments: 1_000,
+            replies: 2_000,
+            season: None,
+            season_chapter: None,
+            arc: None,
+            user_comments,
+            published: None,
+        }];
+
+        let test_against = chapters.first().unwrap().comments;
+
+        let story = Story {
+            story_page,
+            chapters,
+        };
+
+        let record = story.into_record();
+
+        assert_eq!(record.len(), 1);
+
+        let record_comments = record.first().unwrap().comments;
+
+        assert_eq!(record_comments, test_against);
     }
 }

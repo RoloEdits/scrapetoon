@@ -8,4 +8,5 @@ pub struct Daily {
     pub total_likes: u32,
     pub status: String,
     pub day: String,
+    pub scrape_date: String,
 }

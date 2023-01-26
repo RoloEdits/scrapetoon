@@ -1,6 +1,7 @@
 pub mod models;
 
 use crate::factories::BlockingReferClientFactory;
+use crate::utils;
 use anyhow::{anyhow, Context, Result};
 use models::Daily;
 use scraper::{ElementRef, Html, Selector};
@@ -77,6 +78,7 @@ fn weekly_cards(week: &ElementRef, day: &str, series_list: &mut Vec<Daily>) -> R
         let genre = genre(&card);
         let total_likes = total_likes(&card)?;
         let status = is_completed(&card);
+        let utc = utils::get_current_utc_date_verbose();
 
         let day = match day {
             "SUNDAY" => "Sunday",
@@ -97,6 +99,7 @@ fn weekly_cards(week: &ElementRef, day: &str, series_list: &mut Vec<Daily>) -> R
             total_likes,
             status,
             day,
+            scrape_date: utc,
         });
     }
 
@@ -113,6 +116,8 @@ fn completed_cards(completed: &ElementRef, series_list: &mut Vec<Daily>) -> Resu
         let total_likes = total_likes(&card)?;
         let status = is_completed(&card);
 
+        let utc = utils::get_current_utc_date_verbose();
+
         series_list.push(Daily {
             title,
             author,
@@ -120,6 +125,7 @@ fn completed_cards(completed: &ElementRef, series_list: &mut Vec<Daily>) -> Resu
             total_likes,
             status,
             day: "Completed".to_string(),
+            scrape_date: utc,
         });
     }
 

@@ -6,12 +6,13 @@ use models::Response;
 use reqwest::blocking::Client;
 use std::collections::HashMap;
 
-type CommentAmount = u32;
-type ReplyAmount = u32;
+type Comments = u32;
+type Replies = u32;
 type UserComments = Vec<UserComment>;
 
-pub fn parse(id: u32, chapter: u16) -> Result<(CommentAmount, ReplyAmount, UserComments)> {
-    let url = api_url_builder(id, chapter, 15);
+/// # Errors
+pub fn parse(id: u32, chapter: u16) -> Result<(Comments, Replies, UserComments)> {
+    let url = api_url_builder(id, chapter, 100);
     let client = Client::new();
 
     let template: HashMap<String, String> = HashMap::new();
@@ -25,12 +26,14 @@ pub fn parse(id: u32, chapter: u16) -> Result<(CommentAmount, ReplyAmount, UserC
 
     let text = response.text().context("Failed to get JSON body")?;
 
-    // Range selection removes `_callback(` from the start and `);` from the end in an allocation free way
-    let json: Response = serde_json::from_str(&text[10..text.len() - 2])
-        .context("Failed to deserialize comment api json")?;
+    let cleaned = &text[10..text.len() - 2];
 
-    let comments = json.result.count.comment_amount;
-    let replies = json.result.count.reply_amount;
+    // Range selection removes `_callback(` from the start and `);` from the end in an allocation free way
+    let json: Response =
+        serde_json::from_str(cleaned).context("Failed to deserialize comment api json")?;
+
+    let comments = json.result.count.comments;
+    let replies = json.result.count.replies;
     let mut user_comments = json.result.comments;
     user_comments.extend_from_slice(&json.result.top_comments);
 
@@ -229,17 +232,17 @@ mod parse_comments_tests {
     #[test]
     #[ignore]
     fn should_get_comment_count_from_json_response() {
-        let (comment_amount, reply_amount, comments) = parse(1320, 1).unwrap();
+        let (comments, replies, _) = parse(1218, 137).unwrap();
 
-        assert_eq!(3191, comment_amount);
-        assert_eq!(2584, reply_amount);
+        assert_eq!(3191, comments);
+        assert_eq!(2584, replies);
     }
+
     #[test]
     fn should_build_json_spi_url() {
         let url = api_url_builder(95, 1, 15);
 
         let expected = r"https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=webtoon&templateId=or_en&pool=cbox&lang=en&objectId=w_95_1&pageSize=15&listType=OBJECT&pageType=default&initialize=true&useAltSort=true&sort=FAVORITE";
-
         assert_eq!(url, expected);
     }
 

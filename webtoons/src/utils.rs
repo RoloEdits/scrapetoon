@@ -9,14 +9,35 @@ macro_rules! regex {
     };
 }
 
-pub fn get_current_utc_date() -> String {
+#[must_use]
+pub fn get_current_utc_date_naive() -> String {
     Utc::now().date_naive().to_string()
 }
 
+#[must_use]
+pub fn get_current_utc_date_verbose() -> String {
+    Utc::now().to_string()
+}
+
+///
+///
+/// # Arguments
+///
+/// * `filepath`:
+///
+/// returns: Result<PathBuf, Error>
+///
+/// # Examples
+///
+/// ```
+///
+/// ```
+///
+/// # Errors
 pub fn create_date_folder(filepath: &str) -> Result<PathBuf> {
     let path = Path::new(filepath);
 
-    let date_now = get_current_utc_date();
+    let date_now = get_current_utc_date_naive();
     let date_path = path.join(date_now);
 
     if !date_path
@@ -29,6 +50,21 @@ pub fn create_date_folder(filepath: &str) -> Result<PathBuf> {
     Ok(date_path)
 }
 
+///
+///
+/// # Arguments
+///
+/// * `filepath`:
+///
+/// returns: Result<&Path, Error>
+///
+/// # Examples
+///
+/// ```
+///
+/// ```
+///
+/// # Errors
 pub fn path_enforcer(filepath: &str) -> Result<&Path> {
     let path = Path::new(filepath);
 
@@ -49,7 +85,7 @@ mod utils_tests {
     fn should_create_date_folder() {
         let given_path = r"D:\temp";
 
-        let date = get_current_utc_date();
+        let date = get_current_utc_date_naive();
 
         let result = create_date_folder(given_path)
             .unwrap()

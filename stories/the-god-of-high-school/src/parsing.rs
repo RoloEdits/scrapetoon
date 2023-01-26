@@ -19,14 +19,17 @@ mod the_god_of_high_school_tests {
     use pretty_assertions::assert_eq;
 
     #[test]
+    #[ignore]
     fn should_produce_season_number() {
         todo!()
     }
     #[test]
+    #[ignore]
     fn should_produce_season_chapter_number() {
         todo!()
     }
     #[test]
+    #[ignore]
     fn should_produce_arc() {
         todo!()
     }

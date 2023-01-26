@@ -19,9 +19,9 @@ pub struct Result {
 #[derive(Deserialize, Debug, Copy, Clone)]
 pub struct Count {
     #[serde(alias = "reply")]
-    pub reply_amount: u32,
+    pub replies: u32,
     #[serde(alias = "comment")]
-    pub comment_amount: u32,
+    pub comments: u32,
     #[serde(alias = "total")]
     pub total: u32,
 }

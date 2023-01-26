@@ -62,14 +62,17 @@ mod unordinary_tests {
     }
 
     #[test]
+    #[ignore]
     fn should_produce_season_number() {
         todo!()
     }
     #[test]
+    #[ignore]
     fn should_produce_season_chapter_number() {
         todo!()
     }
     #[test]
+    #[ignore]
     fn should_produce_arc() {
         todo!()
     }

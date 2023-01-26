@@ -1,10 +1,11 @@
-mod comments;
+pub mod comments;
 mod length;
 mod likes;
 pub mod models;
 pub mod panels;
 
 use crate::factories::BlockingReferClientFactory;
+use crate::story::chapter::comments::models::UserComment;
 use crate::story::chapter::models::Chapter;
 use crate::{Arc, Season, SeasonChapter, Skip};
 use anyhow::{bail, Context, Result};
@@ -12,6 +13,7 @@ use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
+use tracing::error;
 
 /// # Errors
 pub fn parse(
@@ -71,15 +73,36 @@ fn chapter(
     let number = chapter_number(&html)
         .unwrap_or_else(|_| panic!("failed to parse chapter number from {url}"));
 
-    let (comments, replies, user_comments) = comments::parse(id, number)
-        .unwrap_or_else(|_| panic!("failed to parse comments from {url}"));
+    let (comments, replies, user_comments) = match comments::parse(id, number) {
+        Ok(tup) => tup,
+
+        Err(err) => {
+            error!("Error: {err}, failed to parse comments from {url}");
+
+            (
+                0,
+                0,
+                vec![UserComment {
+                    username: "".to_string(),
+                    replies: 0,
+                    upvotes: 0,
+                    downvotes: 0,
+                    contents: "".to_string(),
+                    profile_type: "".to_string(),
+                    auth_provider: "".to_string(),
+                    country: "".to_string(),
+                    post_date: "".to_string(),
+                }],
+            )
+        }
+    };
 
     let season = season_fn(&html, number);
     let season_chapter = season_chapter_fn(&html, number);
     let arc = arc_fn(&html, number);
 
     let result = Chapter {
-        number,
+        number: chapter,
         likes,
         length,
         comments,

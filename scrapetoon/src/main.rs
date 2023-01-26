@@ -15,6 +15,7 @@ const TO_SKIP: fn(u16) -> bool = |_chapter: u16| -> bool { false };
 
 fn main() -> Result<()> {
     let cli = Scrapetoon::parse();
+    tracing_subscriber::fmt::init();
 
     match cli.source {
         Source::Daily { path } => {
