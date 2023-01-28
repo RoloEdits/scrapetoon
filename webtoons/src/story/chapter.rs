@@ -4,17 +4,18 @@ mod likes;
 pub mod models;
 pub mod panels;
 
-use crate::factories::BlockingReferClientFactory;
-use crate::story::chapter::comments::models::UserComment;
+use crate::factories::BlockingReferClient;
 use crate::story::chapter::models::Chapter;
-use crate::{Arc, Season, SeasonChapter, Skip};
+use crate::{utils, Arc, Season, SeasonChapter, SkipChapter};
 use anyhow::{bail, Context, Result};
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
+use std::collections::HashMap;
 use tracing::error;
 
+#[allow(clippy::too_many_arguments)]
 /// # Errors
 pub fn parse(
     start: u16,
@@ -23,14 +24,10 @@ pub fn parse(
     season: Season,
     season_chapter: SeasonChapter,
     arc: Arc,
-    skip: Skip,
+    skip_chapter: SkipChapter,
+    is_completed: bool,
+    chapter_published: Option<&HashMap<u16, String>>,
 ) -> Result<Vec<Chapter>> {
-    // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(8)
-        .build_global()
-        .context("Couldn't create thread pool")?;
-
     let chapters: Vec<_> = (start..=end).collect();
     let total = chapters.len() as u64;
 
@@ -38,71 +35,91 @@ pub fn parse(
     let vec = chapters
         .into_par_iter()
         .progress_count(total)
-        .filter_map(|chap| chapter(id, chap, season, season_chapter, arc, skip))
+        .filter_map(|chap| {
+            match chapter(
+                id,
+                chap,
+                season,
+                season_chapter,
+                arc,
+                skip_chapter,
+                is_completed,
+                chapter_published,
+            ) {
+                Ok(ok) => ok,
+                Err(err) => {
+                    error!("Failed to parse chapter {chap} due to {err}");
+                    None
+                }
+            }
+        })
         .collect();
 
     Ok(vec)
 }
 
+// Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
+#[allow(clippy::too_many_arguments)]
 fn chapter(
     id: u32,
     chapter: u16,
     season_fn: Season,
     season_chapter_fn: SeasonChapter,
     arc_fn: Arc,
-    skip: Skip,
-) -> Option<Chapter> {
-    let url = chapter_url(id, chapter);
-
-    let response = BlockingReferClientFactory::get(&url).unwrap();
-
-    if response.status() != StatusCode::OK || skip(chapter) {
-        return None;
+    skip_chapter: SkipChapter,
+    is_completed: bool,
+    chapter_published: Option<&HashMap<u16, String>>,
+) -> Result<Option<Chapter>> {
+    if skip_chapter(chapter) {
+        return Ok(None);
     }
 
-    let text = response.text().unwrap();
+    let mut number: Option<u16> = None;
+    let mut length: Option<u32> = None;
+    let mut published: Option<String> = None;
+    let mut html: Option<Html> = None;
 
-    let html = Html::parse_document(&text);
+    if !is_completed {
+        let url = chapter_url(id, chapter);
 
-    let likes =
-        likes::parse(id, chapter).unwrap_or_else(|_| panic!("failed to parse likes from {url}"));
+        let response = BlockingReferClient::get(&url).unwrap();
 
-    let length =
-        length::parse(&html).unwrap_or_else(|_| panic!("failed to parse length from {url}"));
-
-    let number = chapter_number(&html)
-        .unwrap_or_else(|_| panic!("failed to parse chapter number from {url}"));
-
-    let (comments, replies, user_comments) = match comments::parse(id, number) {
-        Ok(tup) => tup,
-
-        Err(err) => {
-            error!("Error: {err}, failed to parse comments from {url}");
-
-            (
-                0,
-                0,
-                vec![UserComment {
-                    username: "".to_string(),
-                    replies: 0,
-                    upvotes: 0,
-                    downvotes: 0,
-                    contents: "".to_string(),
-                    profile_type: "".to_string(),
-                    auth_provider: "".to_string(),
-                    country: "".to_string(),
-                    post_date: "".to_string(),
-                }],
-            )
+        if response.status() != StatusCode::OK {
+            return Ok(None);
         }
-    };
 
-    let season = season_fn(&html, number);
-    let season_chapter = season_chapter_fn(&html, number);
-    let arc = arc_fn(&html, number);
+        let text = response.text()?;
+
+        let temp_html = Html::parse_document(&text);
+
+        let temp_number = chapter_number(&temp_html)?;
+
+        let get_date = chapter_published
+            .expect("No HashMap for date given")
+            .get(&temp_number)
+            .unwrap()
+            .clone();
+
+        number = Some(temp_number);
+        length = Some(length::parse(&temp_html)?);
+        published = Some(get_date);
+        html = Some(temp_html);
+    }
+
+    let season = season_fn(html.as_ref(), number.unwrap_or(chapter));
+    let season_chapter = season_chapter_fn(html.as_ref(), number.unwrap_or(chapter));
+    let arc = arc_fn(html.as_ref(), number.unwrap_or(chapter));
+
+    let likes = likes::parse(id, chapter)?;
+
+    // To handle chapter misalignment, comment::parse() needs to use the passed in `chapter`, otherwise this will grab data from the bad chapter
+    // as the chapter number parsed from whats displayed is contiguous, causing the shift to happen
+    let (comments, replies, user_comments) = comments::parse(id, chapter)?;
+
+    let utc = utils::get_current_utc_date_verbose();
 
     let result = Chapter {
-        number: chapter,
+        number: number.unwrap_or(chapter),
         likes,
         length,
         comments,
@@ -111,10 +128,11 @@ fn chapter(
         season_chapter,
         arc,
         user_comments,
-        published: None, // <---------- TODO: Find a way to get the published date
+        published,
+        scraped: utc,
     };
 
-    Some(result)
+    Ok(Some(result))
 }
 
 fn chapter_number(html: &Html) -> Result<u16> {

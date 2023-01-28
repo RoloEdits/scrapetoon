@@ -5,7 +5,7 @@ use serde::Serialize;
 pub struct Chapter {
     pub number: u16,
     pub likes: u32,
-    pub length: u32,
+    pub length: Option<u32>,
     pub comments: u32,
     pub replies: u32,
     pub season: Option<u8>,
@@ -13,4 +13,5 @@ pub struct Chapter {
     pub arc: Option<String>,
     pub user_comments: Vec<UserComment>,
     pub published: Option<String>,
+    pub scraped: String,
 }

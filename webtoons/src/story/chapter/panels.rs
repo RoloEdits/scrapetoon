@@ -1,6 +1,6 @@
 mod models;
 
-use crate::factories::BlockingReferClientFactory;
+use crate::factories::BlockingReferClient;
 use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use image::{GenericImage, ImageBuffer, RgbImage};
@@ -15,12 +15,6 @@ use std::{fs, path::Path, thread};
 /// # Errors
 pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
     let path = Path::new(path);
-
-    // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(6)
-        .build_global()
-        .context("Failed to build thread pool")?;
 
     let range: Vec<_> = (start..=end).collect();
 
@@ -43,7 +37,7 @@ pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
 fn chapter_panels(url: &str, path: &Path, chapter: u16) -> Result<()> {
     let url = url_builder(url, chapter);
 
-    let response = BlockingReferClientFactory::get(&url)?;
+    let response = BlockingReferClient::get(&url)?;
 
     if response.status() != StatusCode::OK {
         return Ok(());
@@ -119,9 +113,7 @@ fn download<'a>(
     let mut images: Vec<IntermediateImageInfo> = Vec::new();
 
     for image in webtoon_image_data {
-        let bytes = BlockingReferClientFactory::get(&image.url)?
-            .bytes()?
-            .to_vec();
+        let bytes = BlockingReferClient::get(&image.url)?.bytes()?.to_vec();
 
         let height = image.height;
         let width = image.width;

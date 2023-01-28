@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::factories::BlockingReferClientFactory;
+use crate::factories::BlockingReferClient;
 use anyhow::{anyhow, bail, Context, Result};
 use chrono::NaiveDate;
 use crossbeam::queue::SegQueue;
@@ -9,47 +9,49 @@ use models::ChapterList;
 use rand::prelude::*;
 use rayon::prelude::*;
 use scraper::{ElementRef, Html, Selector};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::thread;
 use std::time::Duration;
+use tracing::error;
 
 pub mod models;
 
-pub fn parse(end: u16, input_url: &str) -> Result<VecDeque<ChapterList>> {
-    // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(4)
-        .build_global()
-        .context("Couldn't create thread pool")?;
-
+/// # Errors
+/// # Panics
+pub fn parse(end: u16, url: &str) -> Result<HashMap<u16, String>> {
     let range: Vec<_> = (1..=end).collect();
     let total = range.len() as u64;
 
     let chapter_info: SegQueue<ChapterList> = SegQueue::new();
 
-    range
+    let list: Vec<_> = range
         .into_par_iter()
         .progress_count(total)
-        .try_for_each(|page| {
-            let url = format!("{input_url}&page={page}");
-            if list(&url, &chapter_info).is_err() {
-                // TODO: Log
-                bail!("Failed to parse Page {page}")
+        .map(|page| -> Vec<ChapterList> {
+            let url = format!("{url}&page={page}");
+
+            let list_info = list(&url);
+
+            if list_info.is_err() {
+                error!("Failed to parse Page {page}");
             }
-            Ok(())
-        })?;
 
-    let mut result: VecDeque<ChapterList> = VecDeque::with_capacity(chapter_info.len());
+            list_info.unwrap()
+        })
+        .flatten()
+        .collect();
 
-    for info in chapter_info {
-        result.push_back(info);
+    let mut publish_map: HashMap<u16, String> = HashMap::with_capacity(list.len());
+
+    for chapter in list {
+        publish_map.insert(chapter.chapter, chapter.date);
     }
 
-    Ok(result)
+    Ok(publish_map)
 }
 
-fn list(url: &str, chapter_info: &SegQueue<ChapterList>) -> Result<()> {
-    let response = BlockingReferClientFactory::get(url)?;
+fn list(url: &str) -> Result<Vec<ChapterList>> {
+    let response = BlockingReferClient::get(url)?;
     let mut rng = thread_rng();
     let rand = rng.gen_range(1..=3);
     thread::sleep(Duration::from_millis(500 * rand));
@@ -58,28 +60,30 @@ fn list(url: &str, chapter_info: &SegQueue<ChapterList>) -> Result<()> {
         .text()
         .with_context(|| format!("Failed to text body result info at url: {url}"))?;
 
-    chapter(&html, chapter_info)?;
+    let list = chapter(&html)?;
 
-    Ok(())
+    Ok(list)
 }
 
-fn chapter(html: &str, chapter_info: &SegQueue<ChapterList>) -> Result<()> {
+fn chapter(html: &str) -> Result<Vec<ChapterList>> {
     let html = Html::parse_document(html);
     let chapter_selector =
         Selector::parse("ul#_listUl>li").expect("Failed to parse Chapter Selector");
+
+    let mut list = vec![];
 
     for chapter in html.select(&chapter_selector) {
         let chapter_number = number(&chapter)?;
         let likes = likes(&chapter)?;
         let date = date(&chapter)?;
-        chapter_info.push(ChapterList {
+        list.push(ChapterList {
             chapter: chapter_number,
             likes,
             date,
         });
     }
 
-    Ok(())
+    Ok(list)
 }
 
 // TODO: Combine combine all implementations to use either ElementRef or HTML

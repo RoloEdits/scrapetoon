@@ -5,12 +5,10 @@ use clap::Parser;
 use cli::StoryCliArgs;
 use csv::story::IntoStoryRecord;
 use csv::CsvWrite;
-use webtoons::story;
 use webtoons::utils;
 
 pub const TO_SKIP: fn(u16) -> bool = |chapter: u16| -> bool {
     // The URl no=221 for chapter 221 is a 404. No=222 is where #221 is.
-    // TODO: Might not need to skip any that resolve to a bad url
     matches!(chapter, 221)
 };
 
@@ -20,14 +18,16 @@ fn main() -> Result<()> {
     let args = StoryCliArgs::parse();
     tracing_subscriber::fmt::init();
 
-    let (story, kebab_title) = story::parse(
+    let (story, kebab_title) = webtoons::parse_series(
         args.start,
         args.end,
+        args.pages,
         PAGE_URL,
         parsing::season,
         parsing::season_chapter,
         parsing::arc,
         TO_SKIP,
+        false,
     )?;
 
     let path = utils::path_enforcer(&args.output)?;

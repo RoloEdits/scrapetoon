@@ -1,17 +1,20 @@
 pub mod chapter;
-mod chapter_list;
+pub mod chapter_list;
 pub mod models;
 
-use crate::factories::BlockingReferClientFactory;
-use crate::{regex, Arc, Season, SeasonChapter, Skip};
+use crate::factories::BlockingReferClient;
+use crate::{regex, Arc, Season, SeasonChapter, SkipChapter};
 use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use models::{Story, StoryPage};
 use scraper::{Html, Selector};
+use std::collections::HashMap;
 use std::thread;
 
 const ONGOING: &str = "Ongoing";
 
+// Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
+#[allow(clippy::too_many_arguments)]
 /// # Errors
 pub fn parse(
     start: u16,
@@ -20,11 +23,23 @@ pub fn parse(
     season: Season,
     season_chapter: SeasonChapter,
     arc: Arc,
-    skip: Skip,
+    skip: SkipChapter,
+    is_completed: bool,
+    chapter_published: Option<&HashMap<u16, String>>,
 ) -> Result<(Story, String)> {
     let (id, kebab_title) = parse_url(url);
     let story_page = story_page(url)?;
-    let chapters = chapter::parse(start, end, id, season, season_chapter, arc, skip)?;
+    let chapters = chapter::parse(
+        start,
+        end,
+        id,
+        season,
+        season_chapter,
+        arc,
+        skip,
+        is_completed,
+        chapter_published,
+    )?;
 
     Ok((
         Story {
@@ -35,28 +50,9 @@ pub fn parse(
     ))
 }
 
-// fn get_extra_info(pages: u16, url: &str) -> Result<(Story, HashMap<u16, LikesDate>)> {
-//     println!("Pre-Fetching Necessary Data");
-//     let series_info = parse(pages, url)?;
-//     println!("Completed Pre-Fetch");
-//
-//     let mut likes_date_hashmap: HashMap<u16, LikesDate> = HashMap::new();
-//
-//     for chapter in &series_info.chapter_list {
-//         match likes_date_hashmap.insert(
-//             chapter.chapter,
-//             LikesDate::new(chapter.likes, chapter.date.clone()),
-//         ) {
-//             None | Some(_) => continue,
-//         };
-//     }
-//
-//     Ok((series_info, likes_date_hashmap))
-// }
-
 // Series Page
 fn story_page(url: &str) -> Result<StoryPage> {
-    let html = BlockingReferClientFactory::get(url)?
+    let html = BlockingReferClient::get(url)?
         .text()
         .context("Failed to get HTML body as text")?;
 

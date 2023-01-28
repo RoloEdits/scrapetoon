@@ -1,6 +1,6 @@
 pub mod models;
 
-use crate::factories::BlockingReferClientFactory;
+use crate::factories::BlockingReferClient;
 use crate::utils;
 use anyhow::{anyhow, Context, Result};
 use models::Daily;
@@ -12,7 +12,7 @@ const DAILY_SCHEDULE: &str = "https://www.webtoons.com/en/dailySchedule";
 pub fn parse() -> Result<Vec<Daily>> {
     let mut series_list: Vec<Daily> = Vec::new();
 
-    let response = BlockingReferClientFactory::get(DAILY_SCHEDULE)
+    let response = BlockingReferClient::get(DAILY_SCHEDULE)
         .context("Couldn't connect to Daily Schedule")?
         .text()
         .context("Couldn't get text body from html response")?;

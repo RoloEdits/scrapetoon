@@ -3,42 +3,48 @@
 use scraper::{Html, Selector};
 use webtoons::regex;
 
-pub const fn season(html: &Html, chapter: u16) -> Option<u8> {
+pub const fn season(html: Option<&Html>, chapter: u16) -> Option<u8> {
+    if let Some(html) = html {}
     None
 }
 
-pub const fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
+pub const fn season_chapter(html: Option<&Html>, chapter: u16) -> Option<u16> {
+    if let Some(html) = html {}
     None
 }
 
-pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {}
     None
 }
 
-// TODO: Figure out what to do with adjusted chapter numbers
-pub fn title_chapter_number(html: &Html) -> u16 {
-    let title_selector = Selector::parse("h1.subj_episode").unwrap();
+pub fn title_chapter_number(html: Option<&Html>) -> Option<u16> {
+    if let Some(html) = html {
+        let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
-    let regex = regex![r"Episode\s(\d+)"];
+        let regex = regex![r"Episode\s(\d+)"];
 
-    let title = html
-        .select(&title_selector)
-        .into_iter()
-        .next()
-        .unwrap()
-        .text()
-        .collect::<Vec<_>>()[0];
+        let title = html
+            .select(&title_selector)
+            .into_iter()
+            .next()
+            .unwrap()
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let meaningful_chapter_number = regex
-        .captures(title)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .parse::<u16>()
-        .unwrap();
+        let meaningful_chapter_number = regex
+            .captures(title)
+            .unwrap()
+            .get(1)
+            .unwrap()
+            .as_str()
+            .parse::<u16>()
+            .unwrap();
 
-    meaningful_chapter_number
+        return Some(meaningful_chapter_number);
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -56,7 +62,7 @@ mod unordinary_tests {
 
         let html1 = Html::parse_document(CHAPTER_NUMBER1);
 
-        let result1 = title_chapter_number(&html1);
+        let result1 = title_chapter_number(Some(&html1));
 
         assert_eq!(result1, 78);
     }

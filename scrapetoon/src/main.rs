@@ -35,6 +35,8 @@ fn main() -> Result<()> {
             url,
             start,
             end,
+            pages,
+            completed,
         } => {
             let date_path = create_date_folder(&path)?;
 
@@ -42,11 +44,13 @@ fn main() -> Result<()> {
             let (story, kebab_title) = webtoons::parse_series(
                 start,
                 end,
+                pages,
                 &url,
                 parsing::season,
                 parsing::season_chapter,
                 parsing::arc,
                 TO_SKIP,
+                completed,
             )?;
             story.into_record().write(&date_path, &kebab_title)?;
             info!("Finished scraping {kebab_title}!");

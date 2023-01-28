@@ -1,15 +1,18 @@
 #![allow(unused)]
 use scraper::Html;
 
-pub const fn season(html: &Html, chapter: u16) -> Option<u8> {
+pub const fn season(html: Option<&Html>, chapter: u16) -> Option<u8> {
+    if let Some(html) = html {}
     None
 }
 
-pub const fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
+pub const fn season_chapter(html: Option<&Html>, chapter: u16) -> Option<u16> {
+    if let Some(html) = html {}
     None
 }
 
-pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {}
     None
 }
 

@@ -13,7 +13,10 @@ pub struct Result {
     #[serde(alias = "commentList")]
     pub comments: Vec<UserComment>,
     #[serde(alias = "bestList")]
-    pub top_comments: [UserComment; 3],
+    // Keeping to Vec to handle potential case of no best comments yet on a new chapter
+    pub top_comments: Vec<UserComment>,
+    #[serde(alias = "pageModel")]
+    pub page_model: PageModel,
 }
 
 #[derive(Deserialize, Debug, Copy, Clone)]
@@ -24,6 +27,14 @@ pub struct Count {
     pub comments: u32,
     #[serde(alias = "total")]
     pub total: u32,
+}
+
+#[derive(Deserialize, Debug, Copy, Clone)]
+pub struct PageModel {
+    #[serde(alias = "pageSize")]
+    pub page_size: u32,
+    #[serde(alias = "totalPages")]
+    pub total_pages: u16,
 }
 
 #[derive(Deserialize, Debug, Clone, Serialize)]
@@ -44,37 +55,6 @@ pub struct UserComment {
     pub auth_provider: String,
     #[serde(alias = "country")]
     pub country: String,
-    #[serde(alias = "regTime")]
+    #[serde(alias = "regTimeGmt")]
     pub post_date: String,
 }
-
-// #[derive(Serialize, Debug, Deserialize)]
-// pub struct UserComment {
-//     pub user: Option<String>,
-//     pub contents: Option<String>,
-//     pub post_date: Option<String>,
-//     pub upvotes: Option<u32>,
-//     pub downvotes: Option<u32>,
-//     pub reply_count: Option<u16>,
-// }
-//
-// impl UserComment {
-//     #[must_use]
-//     pub const fn new(
-//         user: Option<String>,
-//         body: Option<String>,
-//         post_date: Option<String>,
-//         upvotes: Option<u32>,
-//         downvotes: Option<u32>,
-//         reply_count: Option<u16>,
-//     ) -> Self {
-//         Self {
-//             user,
-//             contents: body,
-//             post_date,
-//             upvotes,
-//             downvotes,
-//             reply_count,
-//         }
-//     }
-// }

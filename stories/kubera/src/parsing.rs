@@ -3,65 +3,77 @@
 use scraper::{Html, Selector};
 use webtoons::regex;
 
-pub fn season(html: &Html, chapter: u16) -> Option<u8> {
-    let title_selector = Selector::parse("h1.subj_episode").unwrap();
+pub fn season(html: Option<&Html>, chapter: u16) -> Option<u8> {
+    if let Some(html) = html {
+        let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
-    let regex = regex![r"Season\s(\d)"];
+        let regex = regex![r"Season\s(\d)"];
 
-    let title = html
-        .select(&title_selector)
-        .next()?
-        .text()
-        .collect::<Vec<_>>()[0];
+        let title = html
+            .select(&title_selector)
+            .next()?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let season = match regex.captures(title) {
-        Some(cap) => cap,
-        None => return Some(1),
-    }
-    .get(1)?
-    .as_str()
-    .parse::<u8>()
-    .expect("Failed to parse season from title");
-
-    Some(season)
-}
-
-pub fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
-    let title_selector = Selector::parse("h1.subj_episode").unwrap();
-
-    let regex = regex![r"Ep.\s(\d+)"];
-
-    let title = html
-        .select(&title_selector)
-        .next()?
-        .text()
-        .collect::<Vec<_>>()[0];
-
-    let season_chapter = regex
-        .captures(title)?
+        let season = match regex.captures(title) {
+            Some(cap) => cap,
+            None => return Some(1),
+        }
         .get(1)?
         .as_str()
-        .parse::<u16>()
-        .unwrap();
+        .parse::<u8>()
+        .expect("Failed to parse season from title");
 
-    Some(season_chapter)
+        return Some(season);
+    }
+
+    None
 }
 
-pub fn arc(html: &Html, chapter: u16) -> Option<String> {
-    let arc_title_selector = Selector::parse("h1.subj_episode").unwrap();
+pub fn season_chapter(html: Option<&Html>, chapter: u16) -> Option<u16> {
+    if let Some(html) = html {
+        let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
-    // TODO: Figure out why last character is being removed from capture group
-    let regex = regex![r"-([A-Za-z'\s]+)"];
+        let regex = regex![r"Ep.\s(\d+)"];
 
-    let title = html
-        .select(&arc_title_selector)
-        .next()?
-        .text()
-        .collect::<Vec<_>>()[0];
+        let title = html
+            .select(&title_selector)
+            .next()?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let arc_title = regex.captures(title)?.get(1)?.as_str();
+        let season_chapter = regex
+            .captures(title)?
+            .get(1)?
+            .as_str()
+            .parse::<u16>()
+            .unwrap();
 
-    Some(arc_title.trim().to_string())
+        return Some(season_chapter);
+    }
+
+    None
+}
+
+pub fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {
+        let arc_title_selector = Selector::parse("h1.subj_episode").unwrap();
+
+        // TODO: Figure out why last character is being removed from capture group
+        let regex = regex![r"-([A-Za-z'\s]+)"];
+
+        let title = html
+            .select(&arc_title_selector)
+            .next()?
+            .text()
+            .collect::<Vec<_>>()[0];
+
+        let arc_title = regex.captures(title)?.get(1)?.as_str();
+
+        return Some(arc_title.trim().to_string());
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -94,9 +106,9 @@ mod kubera_tests {
         let html2 = Html::parse_document(SEASON_NUMBER2);
         let html3 = Html::parse_document(SEASON_NUMBER3);
 
-        let season_number1 = season(&html1, 0).unwrap();
-        let season_number2 = season(&html2, 0).unwrap();
-        let season_number3 = season(&html3, 0).unwrap();
+        let season_number1 = season(Some(&html1), 0).unwrap();
+        let season_number2 = season(Some(&html2), 0).unwrap();
+        let season_number3 = season(Some(&html3), 0).unwrap();
 
         assert_eq!(season_number1, 1);
         assert_eq!(season_number2, 2);
@@ -121,9 +133,9 @@ mod kubera_tests {
 
         let html2 = Html::parse_document(SEASON_CHAPTER_NUMBER2);
 
-        let result1 = season_chapter(&html1, 0).unwrap();
+        let result1 = season_chapter(Some(&html1), 0).unwrap();
 
-        let result2 = season_chapter(&html2, 0).unwrap();
+        let result2 = season_chapter(Some(&html2), 0).unwrap();
 
         assert_eq!(result1, 50);
         assert_eq!(result2, 165);
@@ -147,9 +159,9 @@ mod kubera_tests {
 
         let html2 = Html::parse_document(ARC_TITLE2);
 
-        let result1 = arc(&html1, 0).unwrap();
+        let result1 = arc(Some(&html1), 0).unwrap();
 
-        let result2 = arc(&html2, 0).unwrap();
+        let result2 = arc(Some(&html), 0).unwrap();
 
         assert_eq!(result1, "Prologue");
         assert_eq!(result2, "A Girl With a God's Name");

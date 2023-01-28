@@ -3,34 +3,40 @@
 use scraper::{Html, Selector};
 use webtoons::regex;
 
-pub fn season(html: &Html, chapter: u16) -> Option<u8> {
-    let title_selector = Selector::parse("h1.subj_episode").expect("Invalid title selector");
+pub fn season(html: Option<&Html>, chapter: u16) -> Option<u8> {
+    if let Some(html) = html {
+        let title_selector = Selector::parse("h1.subj_episode").expect("Invalid title selector");
 
-    let regex = regex![r"\(S(\d)\)"];
+        let regex = regex![r"\(S(\d)\)"];
 
-    let title = html
-        .select(&title_selector)
-        .next()?
-        .text()
-        .collect::<Vec<_>>()[0];
+        let title = html
+            .select(&title_selector)
+            .next()?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let season = match regex.captures(title) {
-        Some(cap) => cap,
-        None => return Some(1),
+        let season = match regex.captures(title) {
+            Some(cap) => cap,
+            None => return Some(1),
+        }
+        .get(1)?
+        .as_str()
+        .parse::<u8>()
+        .expect("Failed to parse season number from title");
+
+        return Some(season);
     }
-    .get(1)?
-    .as_str()
-    .parse::<u8>()
-    .expect("Failed to parse season number from title");
 
-    Some(season)
-}
-
-pub const fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
     None
 }
 
-pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+pub const fn season_chapter(html: Option<&Html>, chapter: u16) -> Option<u16> {
+    if let Some(html) = html {}
+
+    None
+}
+
+pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
     None
 }
 

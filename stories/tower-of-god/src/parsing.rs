@@ -3,66 +3,70 @@
 use scraper::{Html, Selector};
 use webtoons::regex;
 
-// Story specific parsing implementations go here.
-
-pub fn season(html: &Html, chapter: u16) -> Option<u8> {
+pub fn season(html: Option<&Html>, chapter: u16) -> Option<u8> {
     // input eg. '[Season 3] Ep. 133'
+    if let Some(html) = html {
+        let title_selector = Selector::parse("h1.subj_episode").unwrap();
+        // Season (3) where 3 is captured as 'season'
+        // Season
+        // \s = whitespace
+        // /d = one digit
+        // () = captures this group so it can be accessed with ease later
+        let regex = regex![r"Season\s(\d)"];
 
-    let title_selector = Selector::parse("h1.subj_episode").unwrap();
-    // Season (3) where 3 is captured as 'season'
-    // Season
-    // \s = whitespace
-    // /d = one digit
-    // () = captures this group so it can be accessed with ease later
-    let regex = regex![r"Season\s(\d)"];
+        let title = html
+            .select(&title_selector)
+            .next()?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let title = html
-        .select(&title_selector)
-        .next()?
-        .text()
-        .collect::<Vec<_>>()[0];
+        let season = regex
+            .captures(title)
+            .unwrap()
+            .get(1)
+            .unwrap()
+            .as_str()
+            .parse::<u8>()
+            .unwrap();
 
-    let season = regex
-        .captures(title)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str()
-        .parse::<u8>()
-        .unwrap();
+        return Some(season);
+    }
 
-    Some(season)
+    None
 }
 
-pub fn season_chapter(html: &Html, chapter: u16) -> Option<u16> {
+pub fn season_chapter(html: Option<&Html>, chapter: u16) -> Option<u16> {
     // input eg. '[Season 3] Ep. 133'
+    if let Some(html) = html {
+        let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
-    let title_selector = Selector::parse("h1.subj_episode").unwrap();
+        // Ep. (133) where 133 is captured
+        // Ep.
+        // \s = whitespace
+        // /d+ = one or more digits
+        // () = captures this group so it can be accessed with ease later
+        let regex = regex![r"Ep.\s(\d+)"];
 
-    // Ep. (133) where 133 is captured
-    // Ep.
-    // \s = whitespace
-    // /d+ = one or more digits
-    // () = captures this group so it can be accessed with ease later
-    let regex = regex![r"Ep.\s(\d+)"];
+        let title = html
+            .select(&title_selector)
+            .next()?
+            .text()
+            .collect::<Vec<_>>()[0];
 
-    let title = html
-        .select(&title_selector)
-        .next()?
-        .text()
-        .collect::<Vec<_>>()[0];
+        let season_chapter = regex
+            .captures(title)?
+            .get(1)?
+            .as_str()
+            .parse::<u16>()
+            .unwrap();
 
-    let season_chapter = regex
-        .captures(title)?
-        .get(1)?
-        .as_str()
-        .parse::<u16>()
-        .unwrap();
-
-    Some(season_chapter)
+        return Some(season_chapter);
+    }
+    None
 }
 
-pub const fn arc(html: &Html, chapter: u16) -> Option<String> {
+pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {}
     None
 }
 
@@ -81,7 +85,7 @@ mod tower_of_god_tests {
 
         let html = Html::parse_document(SEASON_NUMBER);
 
-        let season_number = season(&html, 0).unwrap();
+        let season_number = season(Some(&html), 0).unwrap();
 
         assert_eq!(season_number, 3);
     }
@@ -104,9 +108,9 @@ mod tower_of_god_tests {
 
         let html2 = Html::parse_document(SEASON_CHAPTER_NUMBER2);
 
-        let result1 = season_chapter(&html1, 0).unwrap();
+        let result1 = season_chapter(Some(&html1), 0).unwrap();
 
-        let result2 = season_chapter(&html2, 0).unwrap();
+        let result2 = season_chapter(Some(&html2), 0).unwrap();
 
         assert_eq!(result1, 133);
         assert_eq!(result2, 1);

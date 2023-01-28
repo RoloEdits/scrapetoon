@@ -2,9 +2,10 @@ use crate::CsvWrite;
 use anyhow::{Context, Result};
 use serde::Serialize;
 use std::path::Path;
-use tracing::info;
+use tracing::{debug, info};
 use webtoons::story::models::Story;
-use webtoons::utils;
+
+// TODO: Think about adding an optional `custom` field that can be any other think the implementer wants that's not already covered
 
 #[derive(Serialize, Debug)]
 pub struct StoryRecord {
@@ -20,7 +21,7 @@ pub struct StoryRecord {
     pub season: Option<u8>,
     pub season_chapter: Option<u16>,
     pub arc: Option<String>,
-    pub length: u32,
+    pub length: Option<u32>,
     pub comments: u32,
     pub total_comments: u32,
     pub replies: u32,
@@ -48,7 +49,7 @@ impl CsvWrite for Vec<StoryRecord> {
             .context("File is open in another application")?;
 
         for data in self {
-            info!("Writing row");
+            debug!("Writing row");
             writer.serialize(data).context("Couldn't write to file.")?;
         }
 
@@ -82,9 +83,6 @@ impl IntoStoryRecord for Story {
         let subscribers = self.story_page.subscribers;
         let rating = self.story_page.rating;
 
-        // TODO: Look into putting this per chapter so each chapters date is logged
-        let utc = utils::get_current_utc_date_verbose();
-
         for chapter in self.chapters {
             for comment in chapter.user_comments {
                 let converted = StoryRecord {
@@ -117,7 +115,7 @@ impl IntoStoryRecord for Story {
                     comment_replies: comment.replies,
                     post_date: comment.post_date,
                     contents: comment.contents,
-                    scrape_date: utc.clone(),
+                    scrape_date: chapter.scraped.clone(),
                 };
 
                 record.push(converted);

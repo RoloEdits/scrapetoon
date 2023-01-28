@@ -34,6 +34,15 @@ pub enum Source {
         /// The latest chapter
         #[arg(short = 'e', long = "end")]
         end: u16,
+
+        // TODO: Pages isn't needed if the story is completed. Right now its value must always be given. Would be ideal if this can be gotten without use input.
+        /// The largest page number of the stories chapter lists
+        #[arg(short = 'p', long = "pages")]
+        pages: u16,
+
+        /// The latest chapter
+        #[arg(short = 'c', long = "completed")]
+        completed: bool,
     },
 
     /// Scrapes chapters to download as an image file
