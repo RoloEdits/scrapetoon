@@ -1,9 +1,10 @@
 pub mod chapter;
 pub mod chapter_list;
+pub mod csv;
 pub mod models;
 
 use crate::factories::BlockingReferClient;
-use crate::{regex, Arc, Season, SeasonChapter, SkipChapter};
+use crate::{regex, Arc, Custom, Season, SeasonChapter, SkipChapter};
 use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use models::{Story, StoryPage};
@@ -16,17 +17,18 @@ const ONGOING: &str = "Ongoing";
 // Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
 #[allow(clippy::too_many_arguments)]
 /// # Errors
-pub fn parse(
+pub fn parse<T: Clone + Send>(
     start: u16,
     end: u16,
     url: &str,
     season: Season,
     season_chapter: SeasonChapter,
     arc: Arc,
+    custom: Custom<T>,
     skip: SkipChapter,
     is_completed: bool,
     chapter_published: Option<&HashMap<u16, String>>,
-) -> Result<(Story, String)> {
+) -> Result<(Story<T>, String)> {
     let (id, kebab_title) = parse_url(url);
     let story_page = story_page(url)?;
     let chapters = chapter::parse(
@@ -36,6 +38,7 @@ pub fn parse(
         season,
         season_chapter,
         arc,
+        custom,
         skip,
         is_completed,
         chapter_published,

@@ -1,15 +1,13 @@
+mod args;
 mod parsing;
 
-use ::csv::CsvWrite;
 use anyhow::{bail, Result};
 use args::{Scrapetoon, Source};
 use clap::Parser;
-use csv::story::IntoStoryRecord;
 use std::path::Path;
 use tracing::info;
-use webtoons::utils::create_date_folder;
-
-mod args;
+use webtoons::story::csv::models::IntoStoryRecord;
+use webtoons::utils::{create_date_folder, CsvWrite};
 
 const TO_SKIP: fn(u16) -> bool = |_chapter: u16| -> bool { false };
 
@@ -49,9 +47,11 @@ fn main() -> Result<()> {
                 parsing::season,
                 parsing::season_chapter,
                 parsing::arc,
+                parsing::custom,
                 TO_SKIP,
                 completed,
             )?;
+
             story.into_record().write(&date_path, &kebab_title)?;
             info!("Finished scraping {kebab_title}!");
         }

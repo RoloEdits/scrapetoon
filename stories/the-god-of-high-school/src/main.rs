@@ -3,9 +3,9 @@ mod parsing;
 use anyhow::Result;
 use clap::Parser;
 use cli::StoryCliArgs;
-use csv::story::IntoStoryRecord;
-use csv::CsvWrite;
+use webtoons::story::csv::models::IntoStoryRecord;
 use webtoons::utils;
+use webtoons::utils::CsvWrite;
 
 const TO_SKIP: fn(u16) -> bool = |chapter: u16| -> bool { matches!(chapter, 249 | 204 | 309) };
 
@@ -23,8 +23,9 @@ fn main() -> Result<()> {
         parsing::season,
         parsing::season_chapter,
         parsing::arc,
+        parsing::custom,
         TO_SKIP,
-        true,
+        false,
     )?;
 
     let path = utils::path_enforcer(&args.output)?;

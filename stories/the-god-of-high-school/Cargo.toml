@@ -9,7 +9,6 @@ edition = "2021"
 scraper = { workspace = true }
 chrono = { workspace = true }
 regex = { workspace = true }
-csv = { path = "../../csv" }
 clap = { workspace = true }
 webtoons = { path = "../../webtoons" }
 cli = { path = "../../cli" }

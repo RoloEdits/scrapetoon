@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Response {
@@ -37,7 +37,7 @@ pub struct PageModel {
     pub total_pages: u16,
 }
 
-#[derive(Deserialize, Debug, Clone, Serialize)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct UserComment {
     #[serde(alias = "userName")]
     pub username: String,
@@ -57,4 +57,6 @@ pub struct UserComment {
     pub country: String,
     #[serde(alias = "regTimeGmt")]
     pub post_date: String,
+    #[serde(alias = "idNo")]
+    pub id: String,
 }

@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["csv", "webtoons", "cli", "scrapetoon", "stories/tower-of-god", "stories/true-beauty", "stories/the-god-of-high-school", "stories/lore-olympus", "stories/unordinary", "stories/kubera"]
+members = ["webtoons", "cli", "scrapetoon", "stories/tower-of-god", "stories/true-beauty", "stories/the-god-of-high-school", "stories/lore-olympus", "stories/unordinary", "stories/kubera"]
 
 [workspace.dependencies]
 clap = {version = "4.0.25", features = ["derive"]}

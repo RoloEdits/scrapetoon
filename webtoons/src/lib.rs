@@ -12,6 +12,7 @@ use tracing::info;
 type Season = fn(Option<&Html>, u16) -> Option<u8>;
 type SeasonChapter = fn(Option<&Html>, u16) -> Option<u16>;
 type Arc = fn(Option<&Html>, u16) -> Option<String>;
+type Custom<T> = fn(Option<&Html>, u16) -> Option<T>;
 pub type SkipChapter = fn(u16) -> bool;
 
 /// # Errors
@@ -25,7 +26,7 @@ pub fn parse_daily_schedule() -> Result<Vec<Daily>> {
 // Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
 #[allow(clippy::too_many_arguments)]
 /// # Errors
-pub fn parse_series(
+pub fn parse_series<T: Clone + Send>(
     start: u16,
     end: u16,
     pages: u16,
@@ -33,9 +34,10 @@ pub fn parse_series(
     season: Season,
     season_chapter: SeasonChapter,
     arc: Arc,
+    custom: Custom<T>,
     skip: SkipChapter,
     is_completed: bool,
-) -> Result<(Story, String)> {
+) -> Result<(Story<T>, String)> {
     // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
     rayon::ThreadPoolBuilder::new()
         .num_threads(12)
@@ -52,6 +54,7 @@ pub fn parse_series(
             season,
             season_chapter,
             arc,
+            custom,
             skip,
             is_completed,
             None,
@@ -69,6 +72,7 @@ pub fn parse_series(
         season,
         season_chapter,
         arc,
+        custom,
         skip,
         is_completed,
         Some(&publish_map),

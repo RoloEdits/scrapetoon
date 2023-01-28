@@ -16,6 +16,11 @@ pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
     None
 }
 
+pub const fn custom(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {}
+    None
+}
+
 #[cfg(test)]
 mod true_beauty_tests {
     use super::*;
@@ -34,6 +39,11 @@ mod true_beauty_tests {
     #[test]
     #[ignore]
     fn should_produce_arc() {
+        todo!()
+    }
+    #[test]
+    #[ignore]
+    fn should_produce_custom() {
         todo!()
     }
 }

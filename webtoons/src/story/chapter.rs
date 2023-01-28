@@ -6,7 +6,7 @@ pub mod panels;
 
 use crate::factories::BlockingReferClient;
 use crate::story::chapter::models::Chapter;
-use crate::{utils, Arc, Season, SeasonChapter, SkipChapter};
+use crate::{utils, Arc, Custom, Season, SeasonChapter, SkipChapter};
 use anyhow::{bail, Context, Result};
 use indicatif::ParallelProgressIterator;
 use rayon::prelude::*;
@@ -17,17 +17,18 @@ use tracing::error;
 
 #[allow(clippy::too_many_arguments)]
 /// # Errors
-pub fn parse(
+pub fn parse<T: Clone + Send>(
     start: u16,
     end: u16,
     id: u32,
     season: Season,
     season_chapter: SeasonChapter,
     arc: Arc,
+    custom: Custom<T>,
     skip_chapter: SkipChapter,
     is_completed: bool,
     chapter_published: Option<&HashMap<u16, String>>,
-) -> Result<Vec<Chapter>> {
+) -> Result<Vec<Chapter<T>>> {
     let chapters: Vec<_> = (start..=end).collect();
     let total = chapters.len() as u64;
 
@@ -42,6 +43,7 @@ pub fn parse(
                 season,
                 season_chapter,
                 arc,
+                custom,
                 skip_chapter,
                 is_completed,
                 chapter_published,
@@ -60,16 +62,17 @@ pub fn parse(
 
 // Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
 #[allow(clippy::too_many_arguments)]
-fn chapter(
+fn chapter<T: Clone + Send>(
     id: u32,
     chapter: u16,
     season_fn: Season,
     season_chapter_fn: SeasonChapter,
     arc_fn: Arc,
+    custom_fn: Custom<T>,
     skip_chapter: SkipChapter,
     is_completed: bool,
     chapter_published: Option<&HashMap<u16, String>>,
-) -> Result<Option<Chapter>> {
+) -> Result<Option<Chapter<T>>> {
     if skip_chapter(chapter) {
         return Ok(None);
     }
@@ -109,6 +112,7 @@ fn chapter(
     let season = season_fn(html.as_ref(), number.unwrap_or(chapter));
     let season_chapter = season_chapter_fn(html.as_ref(), number.unwrap_or(chapter));
     let arc = arc_fn(html.as_ref(), number.unwrap_or(chapter));
+    let custom = custom_fn(html.as_ref(), number.unwrap_or(chapter));
 
     let likes = likes::parse(id, chapter)?;
 
@@ -127,6 +131,7 @@ fn chapter(
         season,
         season_chapter,
         arc,
+        custom,
         user_comments,
         published,
         scraped: utc,

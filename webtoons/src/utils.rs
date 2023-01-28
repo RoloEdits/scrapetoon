@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use chrono::Utc;
 use std::fs;
 use std::path::{Path, PathBuf};
+
 #[macro_export]
 macro_rules! regex {
     ($regex:expr) => {
@@ -17,6 +18,11 @@ pub fn get_current_utc_date_naive() -> String {
 #[must_use]
 pub fn get_current_utc_date_verbose() -> String {
     Utc::now().to_string()
+}
+
+pub trait CsvWrite {
+    /// # Errors
+    fn write(self, path: &Path, filename: &str) -> Result<()>;
 }
 
 ///

@@ -13,6 +13,10 @@ pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
     None
 }
 
+pub const fn custom(html: Option<&Html>, chapter: u16) -> Option<String> {
+    None
+}
+
 #[cfg(test)]
 mod scraper_tests {
     use super::*;
@@ -31,6 +35,11 @@ mod scraper_tests {
     #[test]
     #[ignore]
     fn should_produce_arc() {
+        todo!()
+    }
+    #[test]
+    #[ignore]
+    fn should_produce_custom() {
         todo!()
     }
 }

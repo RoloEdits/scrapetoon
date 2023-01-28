@@ -3,9 +3,9 @@ mod parsing;
 use anyhow::Result;
 use clap::Parser;
 use cli::StoryCliArgs;
-use csv::story::IntoStoryRecord;
-use csv::CsvWrite;
+use webtoons::story::csv::models::IntoStoryRecord;
 use webtoons::utils;
+use webtoons::utils::CsvWrite;
 
 pub const TO_SKIP: fn(u16) -> bool = |chapter: u16| -> bool {
     // The URl no=221 for chapter 221 is a 404. No=222 is where #221 is.
@@ -26,6 +26,7 @@ fn main() -> Result<()> {
         parsing::season,
         parsing::season_chapter,
         parsing::arc,
+        parsing::custom,
         TO_SKIP,
         false,
     )?;

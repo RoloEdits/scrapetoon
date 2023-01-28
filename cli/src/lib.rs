@@ -35,7 +35,7 @@ pub struct StoryCliArgs {
     /// The amount of pages that would minimally encompass the given Start and End.
     #[arg(short, long)]
     pub pages: u16,
-    
+
     /// The output path to save the output csv file.
     #[arg(short, long)]
     pub output: String,

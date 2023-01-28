@@ -353,18 +353,6 @@ dependencies = [
 
 [[package]]
 name = "csv"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "csv 1.1.6",
- "serde",
- "serde_json",
- "tracing",
- "webtoons",
-]
-
-[[package]]
-name = "csv"
 version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22813a6dc45b335f9bade10bf7271dc477e81113e89eb251a0bc2a8a81c536e1"
@@ -1035,7 +1023,6 @@ dependencies = [
  "chrono",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "regex",
  "scraper",
@@ -1103,7 +1090,6 @@ dependencies = [
  "chrono",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "regex",
  "scraper",
@@ -1955,7 +1941,6 @@ dependencies = [
  "anyhow",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "scraper",
  "tracing",
@@ -2242,7 +2227,6 @@ dependencies = [
  "chrono",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "regex",
  "scraper",
@@ -2374,7 +2358,6 @@ dependencies = [
  "chrono",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "regex",
  "scraper",
@@ -2454,7 +2437,6 @@ dependencies = [
  "chrono",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "regex",
  "scraper",
@@ -2503,7 +2485,6 @@ dependencies = [
  "chrono",
  "clap",
  "cli",
- "csv 0.1.0",
  "pretty_assertions",
  "regex",
  "scraper",
@@ -2674,7 +2655,7 @@ dependencies = [
  "chrono",
  "cli",
  "crossbeam",
- "csv 1.1.6",
+ "csv",
  "image",
  "indicatif",
  "mockall",

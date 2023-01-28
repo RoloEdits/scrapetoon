@@ -70,13 +70,18 @@ pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
     None
 }
 
+pub const fn custom(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {}
+    None
+}
+
 #[cfg(test)]
 mod tower_of_god_tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn should_produce_season_number() {
+    fn should_produce_season() {
         const SEASON_NUMBER: &str = r#"<div class="subj_info">
         <a href="https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95" class="subj NPI=a:end,g:en_en" title="Tower of God">Tower of God</a>
         <span class="ico_arr2"></span>
@@ -91,7 +96,7 @@ mod tower_of_god_tests {
     }
 
     #[test]
-    fn should_produce_season_chapter_number() {
+    fn should_produce_season_chapter() {
         const SEASON_CHAPTER_NUMBER1: &str = r##"<div class="subj_info">
         <a href="https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95" class="subj NPI=a:end,g:en_en" title="Tower of God">Tower of God</a>
         <span class="ico_arr2"></span>
@@ -115,4 +120,12 @@ mod tower_of_god_tests {
         assert_eq!(result1, 133);
         assert_eq!(result2, 1);
     }
+
+    #[test]
+    #[ignore]
+    fn should_produce_arc() {}
+
+    #[test]
+    #[ignore]
+    fn should_produce_custom() {}
 }

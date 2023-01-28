@@ -18,7 +18,7 @@ pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
     None
 }
 
-pub fn title_chapter_number(html: Option<&Html>) -> Option<u16> {
+pub fn custom(html: Option<&Html>, chapter: u16) -> Option<u16> {
     if let Some(html) = html {
         let title_selector = Selector::parse("h1.subj_episode").unwrap();
 
@@ -53,7 +53,7 @@ mod unordinary_tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn should_parse_meaningful_chapter_number() {
+    fn should_produce_custom() {
         const CHAPTER_NUMBER1: &str = r##"<div class="subj_info">
 						<a href="https://www.webtoons.com/en/super-hero/unordinary/list?title_no=679" class="subj NPI=a:end,g:en_en" title="unOrdinary">unOrdinary</a>
 						<span class="ico_arr2"></span>
@@ -62,7 +62,7 @@ mod unordinary_tests {
 
         let html1 = Html::parse_document(CHAPTER_NUMBER1);
 
-        let result1 = title_chapter_number(Some(&html1));
+        let result1 = custom(Some(&html1), 78).unwrap();
 
         assert_eq!(result1, 78);
     }

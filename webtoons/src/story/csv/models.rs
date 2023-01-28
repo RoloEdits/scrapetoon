@@ -1,14 +1,11 @@
-use crate::CsvWrite;
-use anyhow::{Context, Result};
+use crate::story::models::Story;
 use serde::Serialize;
-use std::path::Path;
-use tracing::{debug, info};
-use webtoons::story::models::Story;
+use tracing::info;
 
 // TODO: Think about adding an optional `custom` field that can be any other think the implementer wants that's not already covered
 
 #[derive(Serialize, Debug)]
-pub struct StoryRecord {
+pub struct StoryRecord<T> {
     pub title: String,
     pub author: String,
     pub genre: String,
@@ -21,6 +18,7 @@ pub struct StoryRecord {
     pub season: Option<u8>,
     pub season_chapter: Option<u16>,
     pub arc: Option<String>,
+    pub custom: Option<T>,
     pub length: Option<u32>,
     pub comments: u32,
     pub total_comments: u32,
@@ -30,6 +28,7 @@ pub struct StoryRecord {
     pub total_likes: u32,
     pub published: Option<String>,
     pub username: String,
+    pub id: String,
     pub country: String,
     pub profile_type: String,
     pub auth_provider: String,
@@ -41,34 +40,14 @@ pub struct StoryRecord {
     pub scrape_date: String,
 }
 
-impl CsvWrite for Vec<StoryRecord> {
-    fn write(self, path: &Path, filename: &str) -> Result<()> {
-        info!("Writing to csv");
-        let csv_name = format!("{filename}.csv");
-        let mut writer = csv::Writer::from_path(path.join(csv_name))
-            .context("File is open in another application")?;
-
-        for data in self {
-            debug!("Writing row");
-            writer.serialize(data).context("Couldn't write to file.")?;
-        }
-
-        writer.flush().context("Couldn't flush buffer.")?;
-
-        info!("Flushed buffer");
-
-        Ok(())
-    }
+pub trait IntoStoryRecord<T: Clone + Send> {
+    fn into_record(self) -> Vec<StoryRecord<T>>;
 }
 
-pub trait IntoStoryRecord {
-    fn into_record(self) -> Vec<StoryRecord>;
-}
-
-impl IntoStoryRecord for Story {
-    fn into_record(self) -> Vec<StoryRecord> {
+impl<T: Clone + Send> IntoStoryRecord<T> for Story<T> {
+    fn into_record(self) -> Vec<StoryRecord<T>> {
         info!("Making Story Record");
-        let mut record: Vec<StoryRecord> = Vec::new();
+        let mut record: Vec<StoryRecord<T>> = Vec::new();
 
         let total_comments = self.sum_comments();
         let total_replies = self.sum_replies();
@@ -98,6 +77,7 @@ impl IntoStoryRecord for Story {
                     season: chapter.season,
                     season_chapter: chapter.season_chapter,
                     arc: chapter.arc.clone(),
+                    custom: chapter.custom.clone(),
                     length: chapter.length,
                     comments: chapter.comments,
                     total_comments,
@@ -107,6 +87,7 @@ impl IntoStoryRecord for Story {
                     total_likes,
                     published: chapter.published.clone(),
                     username: comment.username,
+                    id: comment.id,
                     country: comment.country,
                     profile_type: comment.profile_type,
                     auth_provider: comment.auth_provider,
@@ -131,7 +112,7 @@ trait SumComments {
     fn sum_comments(&self) -> u32;
 }
 
-impl SumComments for Story {
+impl<T: Clone + Send> SumComments for Story<T> {
     fn sum_comments(&self) -> u32 {
         self.chapters
             .iter()
@@ -143,7 +124,7 @@ trait SumReplies {
     fn sum_replies(&self) -> u32;
 }
 
-impl SumReplies for Story {
+impl<T: Clone + Send> SumReplies for Story<T> {
     fn sum_replies(&self) -> u32 {
         self.chapters
             .iter()
@@ -155,7 +136,7 @@ trait SumLikes {
     fn sum_likes(&self) -> u32;
 }
 
-impl SumLikes for Story {
+impl<T: Clone + Send> SumLikes for Story<T> {
     fn sum_likes(&self) -> u32 {
         self.chapters
             .iter()
@@ -166,9 +147,9 @@ impl SumLikes for Story {
 #[cfg(test)]
 mod story_csv_tests {
     use super::*;
-    use webtoons::story::chapter::comments::models::UserComment;
-    use webtoons::story::chapter::models::Chapter;
-    use webtoons::story::models::StoryPage;
+    use crate::story::chapter::comments::models::UserComment;
+    use crate::story::chapter::models::Chapter;
+    use crate::story::models::StoryPage;
 
     #[test]
     fn should_convert_to_story_record_one_to_one() {
@@ -193,12 +174,13 @@ mod story_csv_tests {
             auth_provider: "".to_string(),
             country: "".to_string(),
             post_date: "".to_string(),
+            id: "".to_string(),
         }];
 
-        let chapters = vec![Chapter {
+        let chapters: Vec<_> = vec![Chapter::<String> {
             number: 1,
             likes: 4_000,
-            length: 2_000,
+            length: Some(2_000),
             comments: 1_000,
             replies: 2_000,
             season: None,
@@ -206,11 +188,13 @@ mod story_csv_tests {
             arc: None,
             user_comments,
             published: None,
+            scraped: "".to_string(),
+            custom: None,
         }];
 
         let test_against = chapters.first().unwrap().comments;
 
-        let story = Story {
+        let story = Story::<String> {
             story_page,
             chapters,
         };

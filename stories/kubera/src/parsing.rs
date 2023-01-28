@@ -76,6 +76,11 @@ pub fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
     None
 }
 
+pub const fn custom(html: Option<&Html>, chapter: u16) -> Option<String> {
+    if let Some(html) = html {}
+    None
+}
+
 #[cfg(test)]
 mod kubera_tests {
 
@@ -161,9 +166,15 @@ mod kubera_tests {
 
         let result1 = arc(Some(&html1), 0).unwrap();
 
-        let result2 = arc(Some(&html), 0).unwrap();
+        let result2 = arc(Some(&html2), 0).unwrap();
 
         assert_eq!(result1, "Prologue");
         assert_eq!(result2, "A Girl With a God's Name");
+    }
+
+    #[test]
+    #[ignore]
+    fn should_produce_custom() {
+        todo!()
     }
 }

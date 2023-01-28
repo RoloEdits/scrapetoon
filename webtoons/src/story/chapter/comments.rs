@@ -74,7 +74,7 @@ mod parse_comments_tests {
     fn should_build_json_spi_url() {
         let url = api_url_builder(95, 1, 15, 1);
 
-        let expected = r"https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=webtoon&templateId=or_en&pool=cbox&lang=en&objectId=w_95_1&pageSize=15&listType=OBJECT&pageType=default&initialize=true&useAltSort=true&sort=FAVORITE";
+        let expected = r"https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=webtoon&templateId=or_en&pool=cbox&lang=en&objectId=w_95_1&pageSize=15&listType=OBJECT&pageType=default&initialize=true&useAltSort=true&sort=FAVORITE&page=1";
         assert_eq!(url, expected);
     }
 }

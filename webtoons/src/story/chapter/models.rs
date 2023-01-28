@@ -1,8 +1,7 @@
 use super::comments::models::UserComment;
-use serde::Serialize;
 
-#[derive(Debug, Serialize)]
-pub struct Chapter {
+#[derive(Debug, Clone)]
+pub struct Chapter<T: Clone + Send> {
     pub number: u16,
     pub likes: u32,
     pub length: Option<u32>,
@@ -14,4 +13,5 @@ pub struct Chapter {
     pub user_comments: Vec<UserComment>,
     pub published: Option<String>,
     pub scraped: String,
+    pub custom: Option<T>,
 }

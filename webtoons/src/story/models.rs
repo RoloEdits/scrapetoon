@@ -1,13 +1,12 @@
 use super::chapter::models::Chapter;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
-pub struct Story {
+#[derive(Debug, Clone)]
+pub struct Story<T: Clone + Send> {
     pub story_page: StoryPage,
-    pub chapters: Vec<Chapter>,
+    pub chapters: Vec<Chapter<T>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct StoryPage {
     pub title: String,
     pub author: String,
@@ -17,15 +16,4 @@ pub struct StoryPage {
     pub views: u64,
     pub subscribers: u32,
     pub rating: f32,
-}
-
-pub struct LikesDate {
-    pub likes: u32,
-    pub date: String,
-}
-
-impl LikesDate {
-    pub const fn new(likes: u32, date: String) -> Self {
-        Self { likes, date }
-    }
 }

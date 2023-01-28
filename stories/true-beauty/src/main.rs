@@ -3,9 +3,9 @@ mod parsing;
 use anyhow::Result;
 use clap::Parser;
 use cli::StoryCliArgs;
-use csv::story::IntoStoryRecord;
-use csv::CsvWrite;
+use webtoons::story::csv::models::IntoStoryRecord;
 use webtoons::utils;
+use webtoons::utils::CsvWrite;
 
 const PAGE_URL: &str = "https://www.webtoons.com/en/romance/truebeauty/list?title_no=1436";
 
@@ -23,6 +23,7 @@ fn main() -> Result<()> {
         parsing::season,
         parsing::season_chapter,
         parsing::arc,
+        parsing::custom,
         TO_SKIP,
         false,
     )?;

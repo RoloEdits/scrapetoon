@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 webtoons = { path = "../webtoons" }
 cli = { path = "../cli" }
-csv = { path = "../csv" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 tracing-subscriber = { workspace = true }

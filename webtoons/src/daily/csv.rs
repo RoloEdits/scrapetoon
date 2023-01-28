@@ -1,7 +1,7 @@
-use crate::CsvWrite;
+use super::models::Daily;
+use crate::utils::CsvWrite;
 use anyhow::{Context, Result};
 use std::path::Path;
-use webtoons::daily::models::Daily;
 
 impl CsvWrite for Vec<Daily> {
     fn write(self, path: &Path, filename: &str) -> Result<()> {
