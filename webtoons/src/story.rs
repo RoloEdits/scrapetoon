@@ -278,6 +278,8 @@ fn author(html: &str) -> Result<String> {
 }
 
 // Series Helpers
+/// # Panics
+#[must_use]
 fn parse_url(url: &str) -> (u32, String) {
     let reg = regex![
         r"https://www.webtoons.com/../(?P<genre>.+)/(?P<title>.+)/list\?title_no=(?P<id>\d+)"
