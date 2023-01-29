@@ -4,7 +4,7 @@ use reqwest::blocking::Client;
 use std::collections::HashMap;
 use std::thread;
 use std::time::Duration;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 pub struct BlockingReferClient;
 
@@ -20,12 +20,12 @@ impl BlockingReferClient {
         let mut retries = 5;
         let mut wait = 1;
 
-        // let mut rng = rand::thread_rng();
-        // let stop_rng = rng.gen_range(500..=2500);
-        // thread::sleep(Duration::from_millis(stop_rng));
+        let mut rng = rand::thread_rng();
+        let stop_rng = rng.gen_range(500..=2500);
+        thread::sleep(Duration::from_millis(stop_rng));
 
         let response = loop {
-            info!("Making request to {url}");
+            debug!("Making request to {url}");
             match client
                 .get(url)
                 .header("referer", "https://www.webtoons.com/")
@@ -72,7 +72,7 @@ impl BlockingJsonReferClient {
         let template: HashMap<String, String> = HashMap::new();
 
         let response = loop {
-            info!("Making request to {url}");
+            debug!("Making request to {url}");
             match client
                 .get(url)
                 .header("referer", "https://www.webtoons.com/")

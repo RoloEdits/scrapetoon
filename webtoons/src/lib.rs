@@ -37,14 +37,14 @@ pub fn parse_series<T: Clone + Send>(
     custom: Custom<T>,
     skip: SkipChapter,
     is_completed: bool,
+    threads: Option<usize>,
 ) -> Result<(Story<T>, String)> {
-    // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
+    info!("Starting Story Parsing");
+    // 6 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
     rayon::ThreadPoolBuilder::new()
-        .num_threads(12)
+        .num_threads(threads.unwrap_or(4))
         .build_global()
         .context("Couldn't create thread pool")?;
-
-    info!("Starting Story Parsing");
 
     if is_completed {
         let (series_info, kebab_title) = story::parse(
@@ -82,10 +82,16 @@ pub fn parse_series<T: Clone + Send>(
 }
 
 /// # Errors
-pub fn download_panels(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
-    // 8 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
+pub fn download_panels(
+    url: &str,
+    path: &str,
+    start: u16,
+    end: u16,
+    threads: Option<usize>,
+) -> Result<()> {
+    // 6 Threads is around the line at which problems start to occur when pinging out too many times at once as all getting blocked
     rayon::ThreadPoolBuilder::new()
-        .num_threads(6)
+        .num_threads(threads.unwrap_or(6))
         .build_global()
         .context("Failed to build thread pool")?;
 

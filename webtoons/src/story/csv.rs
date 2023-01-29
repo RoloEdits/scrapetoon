@@ -15,8 +15,8 @@ impl<T: Serialize> CsvWrite for Vec<StoryRecord<T>> {
         let mut writer = csv::Writer::from_path(path.join(csv_name))
             .context("File is open in another application")?;
 
-        for data in self {
-            debug!("Writing row");
+        for (row, data) in self.into_iter().enumerate() {
+            info!("Writing row {row}");
             writer.serialize(data).context("Couldn't write to file.")?;
         }
 

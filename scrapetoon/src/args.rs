@@ -43,6 +43,11 @@ pub enum Source {
         /// The latest chapter
         #[arg(short = 'c', long = "completed")]
         completed: bool,
+
+        /// The number of threads program will use. Each one correlating to how many chapters will be scraped in parallel. USE WITH CAUTION.
+        /// Trying to get too many chapters at once can cause timeout issues. Defaults to `4` threads. Setting to `0` will use all available threads.
+        #[arg(short = 't', long = "threads")]
+        threads: Option<usize>,
     },
 
     /// Scrapes chapters to download as an image file
@@ -62,5 +67,11 @@ pub enum Source {
         /// The latest chapter to download
         #[arg(short = 'e', long = "end")]
         end: u16,
+        
+        /// The number of threads program will use. Each one correlating to how many chapters will be scraped in parallel. USE WITH CAUTION.
+        /// Trying to get too many chapters at once can cause timeout issues. Defaults to `6` threads. Setting to `0` will use all available threads.
+        #[arg(short = 't', long = "threads")]
+        threads: Option<usize>,
+        
     },
 }

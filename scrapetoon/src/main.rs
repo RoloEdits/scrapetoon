@@ -35,6 +35,7 @@ fn main() -> Result<()> {
             end,
             pages,
             completed,
+            threads,
         } => {
             let date_path = create_date_folder(&path)?;
 
@@ -50,6 +51,7 @@ fn main() -> Result<()> {
                 parsing::custom,
                 TO_SKIP,
                 completed,
+                threads,
             )?;
 
             story.into_record().write(&date_path, &kebab_title)?;
@@ -60,9 +62,10 @@ fn main() -> Result<()> {
             url,
             start,
             end,
+            threads,
         } => {
             info!("Connecting...");
-            webtoons::story::chapter::panels::get(&url, &path, start, end)?;
+            webtoons::download_panels(&url, &path, start, end, threads)?;
             info!("Finished Downloading Panels!");
         }
     }

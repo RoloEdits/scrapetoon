@@ -31,6 +31,7 @@ fn main() -> Result<()> {
         parsing::custom,
         TO_SKIP,
         false,
+        Some(0),
     )?;
 
     let path = utils::path_enforcer(&args.output)?;

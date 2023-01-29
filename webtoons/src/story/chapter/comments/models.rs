@@ -57,6 +57,7 @@ pub struct UserComment {
     pub country: String,
     #[serde(alias = "regTimeGmt")]
     pub post_date: String,
-    #[serde(alias = "idNo")]
+    // TODO: Find a way to have fallbacks for each possible Id so that if one is null it checks the rest
+    #[serde(alias = "profileUserId")]
     pub id: String,
 }

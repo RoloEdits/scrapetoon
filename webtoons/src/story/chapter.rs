@@ -13,7 +13,7 @@ use rayon::prelude::*;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
 use std::collections::HashMap;
-use tracing::error;
+use tracing::{error, info, warn};
 
 #[allow(clippy::too_many_arguments)]
 /// # Errors
@@ -88,15 +88,13 @@ fn chapter<T: Clone + Send>(
         let response = BlockingReferClient::get(&url).unwrap();
 
         if response.status() != StatusCode::OK {
+            warn!("Status: {} for {}", response.status(), response.url());
             return Ok(None);
         }
 
         let text = response.text()?;
-
         let temp_html = Html::parse_document(&text);
-
         let temp_number = chapter_number(&temp_html)?;
-
         let get_date = chapter_published
             .expect("No HashMap for date given")
             .get(&temp_number)
@@ -113,7 +111,6 @@ fn chapter<T: Clone + Send>(
     let season_chapter = season_chapter_fn(html.as_ref(), number.unwrap_or(chapter));
     let arc = arc_fn(html.as_ref(), number.unwrap_or(chapter));
     let custom = custom_fn(html.as_ref(), number.unwrap_or(chapter));
-
     let likes = likes::parse(id, chapter)?;
 
     // To handle chapter misalignment, comment::parse() needs to use the passed in `chapter`, otherwise this will grab data from the bad chapter
@@ -121,6 +118,8 @@ fn chapter<T: Clone + Send>(
     let (comments, replies, user_comments) = comments::parse(id, chapter)?;
 
     let utc = utils::get_current_utc_date_verbose();
+
+    info!("Success parsing chapter {chapter}");
 
     let result = Chapter {
         number: number.unwrap_or(chapter),

@@ -14,7 +14,7 @@ use std::thread;
 
 const ONGOING: &str = "Ongoing";
 
-// Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
+// Tt is easier to follow by having explicit types and names in the argument list
 #[allow(clippy::too_many_arguments)]
 /// # Errors
 pub fn parse<T: Clone + Send>(
@@ -66,8 +66,6 @@ fn story_page(url: &str) -> Result<StoryPage> {
     let views = views(&html)?;
     let subscribers = subscribers(&html)?;
     let rating = rating(&html)?;
-
-    thread::sleep(time::Duration::from_secs(3));
 
     Ok(StoryPage {
         title,
