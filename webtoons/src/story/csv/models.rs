@@ -165,16 +165,16 @@ mod story_csv_tests {
         };
 
         let user_comments = vec![UserComment {
-            username: "".to_string(),
+            username: String::new(),
             replies: 0,
             upvotes: 0,
             downvotes: 0,
-            contents: "".to_string(),
-            profile_type: "".to_string(),
-            auth_provider: "".to_string(),
-            country: "".to_string(),
-            post_date: "".to_string(),
-            id: "".to_string(),
+            contents: String::new(),
+            profile_type: String::new(),
+            auth_provider: String::new(),
+            country: String::new(),
+            post_date: String::new(),
+            id: Some(String::new()),
         }];
 
         let chapters: Vec<_> = vec![Chapter::<String> {
@@ -188,7 +188,7 @@ mod story_csv_tests {
             arc: None,
             user_comments,
             published: None,
-            scraped: "".to_string(),
+            scraped: String::new(),
             custom: None,
         }];
 
