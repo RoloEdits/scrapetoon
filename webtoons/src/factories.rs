@@ -4,7 +4,7 @@ use reqwest::blocking::Client;
 use std::collections::HashMap;
 use std::thread;
 use std::time::Duration;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, error, warn};
 
 pub struct BlockingReferClient;
 

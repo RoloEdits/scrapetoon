@@ -16,7 +16,7 @@ impl<T: Serialize> CsvWrite for Vec<StoryRecord<T>> {
             .context("File is open in another application")?;
 
         for (row, data) in self.into_iter().enumerate() {
-            info!("Writing row {row}");
+            debug!("Writing row {row}");
             writer.serialize(data).context("Couldn't write to file.")?;
         }
 

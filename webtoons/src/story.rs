@@ -6,11 +6,9 @@ pub mod models;
 use crate::factories::BlockingReferClient;
 use crate::{regex, Arc, Custom, Season, SeasonChapter, SkipChapter};
 use anyhow::{anyhow, bail, Context, Result};
-use core::time;
 use models::{Story, StoryPage};
 use scraper::{Html, Selector};
 use std::collections::HashMap;
-use std::thread;
 
 const ONGOING: &str = "Ongoing";
 

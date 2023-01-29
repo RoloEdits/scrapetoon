@@ -28,7 +28,7 @@ pub struct StoryRecord<T> {
     pub total_likes: u32,
     pub published: Option<String>,
     pub username: String,
-    pub id: String,
+    pub id: Option<String>,
     pub country: String,
     pub profile_type: String,
     pub auth_provider: String,
