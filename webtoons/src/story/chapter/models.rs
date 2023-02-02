@@ -10,8 +10,8 @@ pub struct Chapter<T: Clone + Send> {
     pub season: Option<u8>,
     pub season_chapter: Option<u16>,
     pub arc: Option<String>,
-    pub user_comments: Vec<UserComment>,
+    pub user_comments: Option<Vec<UserComment>>,
     pub published: Option<String>,
-    pub scraped: String,
+    pub timestamp: String,
     pub custom: Option<T>,
 }

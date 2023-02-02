@@ -29,7 +29,9 @@ fn main() -> Result<()> {
         parsing::custom,
         TO_SKIP,
         false,
-        Some(12),
+        args.top_comments,
+        args.all_comments,
+        Some(4),
     )?;
 
     let path = utils::path_enforcer(&args.output)?;

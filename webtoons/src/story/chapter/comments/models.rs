@@ -13,7 +13,6 @@ pub struct Result {
     #[serde(alias = "commentList")]
     pub comments: Vec<UserComment>,
     #[serde(alias = "bestList")]
-    // Keeping to Vec to handle potential case of no best comments yet on a new chapter
     pub top_comments: Vec<UserComment>,
     #[serde(alias = "pageModel")]
     pub page_model: PageModel,
@@ -57,7 +56,10 @@ pub struct UserComment {
     pub country: String,
     #[serde(alias = "regTimeGmt")]
     pub post_date: String,
-    // TODO: Find a way to have fallbacks for each possible Id so that if one is null it checks the rest
+    #[serde(alias = "idNo")]
+    pub id_no: Option<String>,
+    #[serde(alias = "userIdNo")]
+    pub user_id_no: Option<String>,
     #[serde(alias = "profileUserId")]
-    pub id: Option<String>,
+    pub profile_user_id: Option<String>,
 }

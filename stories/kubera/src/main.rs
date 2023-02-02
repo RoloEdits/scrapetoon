@@ -27,6 +27,8 @@ fn main() -> Result<()> {
         parsing::custom,
         TO_SKIP,
         false,
+        args.top_comments,
+        args.all_comments,
         Some(4), // Any more than 4 threads is too fast and will more probably than not face timout issues
     )?;
 

@@ -1,10 +1,9 @@
+use crate::story::chapter::comments::models::UserComment;
 use crate::story::models::Story;
 use serde::Serialize;
 use tracing::info;
 
-// TODO: Think about adding an optional `custom` field that can be any other think the implementer wants that's not already covered
-
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Default, Clone)]
 pub struct StoryRecord<T> {
     pub title: String,
     pub author: String,
@@ -27,17 +26,17 @@ pub struct StoryRecord<T> {
     pub likes: u32,
     pub total_likes: u32,
     pub published: Option<String>,
-    pub username: String,
+    pub username: Option<String>,
     pub id: Option<String>,
-    pub country: String,
-    pub profile_type: String,
-    pub auth_provider: String,
-    pub upvotes: u32,
-    pub downvotes: u32,
-    pub comment_replies: u32,
-    pub post_date: String,
-    pub contents: String,
-    pub scrape_date: String,
+    pub country: Option<String>,
+    pub profile_type: Option<String>,
+    pub auth_provider: Option<String>,
+    pub upvotes: Option<u32>,
+    pub downvotes: Option<u32>,
+    pub comment_replies: Option<u32>,
+    pub post_date: Option<String>,
+    pub contents: Option<String>,
+    pub timestamp: String,
 }
 
 pub trait IntoStoryRecord<T: Clone + Send> {
@@ -62,50 +61,87 @@ impl<T: Clone + Send> IntoStoryRecord<T> for Story<T> {
         let subscribers = self.story_page.subscribers;
         let rating = self.story_page.rating;
 
+        // TODO: Decouple comments in prep for option to have them scraped or not.
         for chapter in self.chapters {
-            for comment in chapter.user_comments {
-                let converted = StoryRecord {
-                    title: title.clone(),
-                    author: author.clone(),
-                    genre: genre.clone(),
-                    status: status.clone(),
-                    release_day: release_day.clone(),
-                    views,
-                    subscribers,
-                    rating,
-                    chapter: chapter.number,
-                    season: chapter.season,
-                    season_chapter: chapter.season_chapter,
-                    arc: chapter.arc.clone(),
-                    custom: chapter.custom.clone(),
-                    length: chapter.length,
-                    comments: chapter.comments,
-                    total_comments,
-                    replies: chapter.replies,
-                    total_replies,
-                    likes: chapter.likes,
-                    total_likes,
-                    published: chapter.published.clone(),
-                    username: comment.username,
-                    id: comment.id,
-                    country: comment.country,
-                    profile_type: comment.profile_type,
-                    auth_provider: comment.auth_provider,
-                    upvotes: comment.upvotes,
-                    downvotes: comment.downvotes,
-                    comment_replies: comment.replies,
-                    post_date: comment.post_date,
-                    contents: comment.contents,
-                    scrape_date: chapter.scraped.clone(),
-                };
+            let chapter_record = StoryRecord {
+                title: title.clone(),
+                author: author.clone(),
+                genre: genre.clone(),
+                status: status.clone(),
+                release_day: release_day.clone(),
+                views,
+                subscribers,
+                rating,
+                chapter: chapter.number,
+                season: chapter.season,
+                season_chapter: chapter.season_chapter,
+                arc: chapter.arc.clone(),
+                custom: chapter.custom.clone(),
+                length: chapter.length,
+                comments: chapter.comments,
+                total_comments,
+                replies: chapter.replies,
+                total_replies,
+                likes: chapter.likes,
+                total_likes,
+                published: chapter.published.clone(),
+                username: None,
+                id: None,
+                country: None,
+                profile_type: None,
+                auth_provider: None,
+                upvotes: None,
+                downvotes: None,
+                comment_replies: None,
+                post_date: None,
+                contents: None,
+                timestamp: chapter.timestamp.clone(),
+            };
 
-                record.push(converted);
+            if let Some(comments) = chapter.user_comments {
+                for comment in comments {
+                    let id = get_valid_user_id(&comment);
+
+                    let comment_record = StoryRecord {
+                        username: Option::from(comment.username),
+                        id,
+                        country: Option::from(comment.country),
+                        profile_type: Option::from(comment.profile_type),
+                        auth_provider: Option::from(comment.auth_provider),
+                        upvotes: Option::from(comment.upvotes),
+                        downvotes: Option::from(comment.downvotes),
+                        comment_replies: Option::from(comment.replies),
+                        post_date: Option::from(comment.post_date),
+                        contents: Option::from(comment.contents.replace('\n', " ")),
+                        ..chapter_record.clone()
+                    };
+
+                    record.push(comment_record);
+                }
+            } else {
+                record.push(chapter_record);
             }
         }
 
         info!("Finished making Story Record");
         record
     }
+}
+
+fn get_valid_user_id(comment: &UserComment) -> Option<String> {
+    if comment.id_no.is_some() {
+        return comment.id_no.clone();
+    }
+
+    if comment.user_id_no.is_some() {
+        return comment.user_id_no.clone();
+    }
+
+    if comment.profile_user_id.is_some() {
+        return comment.profile_user_id.clone();
+    }
+
+    None
 }
 
 trait SumComments {
@@ -164,18 +200,20 @@ mod story_csv_tests {
             rating: 0.0,
         };
 
-        let user_comments = vec![UserComment {
-            username: String::new(),
-            replies: 0,
-            upvotes: 0,
-            downvotes: 0,
-            contents: String::new(),
-            profile_type: String::new(),
-            auth_provider: String::new(),
-            country: String::new(),
-            post_date: String::new(),
-            id: Some(String::new()),
-        }];
+        // let user_comments = vec![UserComment {
+        //     username: String::new(),
+        //     replies: 0,
+        //     upvotes: 0,
+        //     downvotes: 0,
+        //     contents: String::new(),
+        //     profile_type: String::new(),
+        //     auth_provider: String::new(),
+        //     country: String::new(),
+        //     post_date: String::new(),
+        //     id_no: Some(String::new()),
+        //     user_id_no: None,
+        //     profile_user_id: None,
+        // }];
 
         let chapters: Vec<_> = vec![Chapter::<String> {
             number: 1,
@@ -186,9 +224,9 @@ mod story_csv_tests {
             season: None,
             season_chapter: None,
             arc: None,
-            user_comments,
+            user_comments: None,
             published: None,
-            scraped: String::new(),
+            timestamp: String::new(),
             custom: None,
         }];
 

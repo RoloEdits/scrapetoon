@@ -7,47 +7,65 @@ use models::Response;
 
 type Comments = u32;
 type Replies = u32;
-type UserComments = Vec<UserComment>;
 
-/// # Errors
-pub fn parse(id: u32, chapter: u16) -> Result<(Comments, Replies, UserComments)> {
-    let url = api_url_builder(id, chapter, 100, 1);
+pub fn parse(
+    id: u32,
+    chapter: u16,
+    top_comments: bool,
+    all_comments: bool,
+) -> Result<(Comments, Replies, Option<Vec<UserComment>>)> {
+    let page = if all_comments { 100 } else { 3 };
+
+    let url = api_url_builder(id, chapter, 100, page);
 
     let response =
         BlockingJsonReferClient::get(&url).context("Failed to connect to Comments Section API")?;
 
     let text = response.text().context("Failed to get JSON body")?;
 
+    // Range selection removes `_callback(` from the start and `);` from the end in an allocation free way
     let cleaned = &text[10..text.len() - 2];
 
-    // Range selection removes `_callback(` from the start and `);` from the end in an allocation free way
     let json: Response = serde_json::from_str(cleaned)?;
 
-    let comments = json.result.count.comments;
-    let replies = json.result.count.replies;
-    let mut user_comments = json.result.top_comments;
-    user_comments.extend_from_slice(&json.result.comments);
+    let comment_count = json.result.count.comments;
+    let reply_count = json.result.count.replies;
 
-    for page in 2..=json.result.page_model.total_pages {
-        let url = api_url_builder(id, chapter, 100, page);
-        let response = BlockingJsonReferClient::get(&url)
-            .context("Failed to connect to Comments Section API")?;
-        let text = response.text().context("Failed to get JSON body")?;
+    let mut user_comments: Option<Vec<UserComment>> = None;
 
-        let cleaned = &text[10..text.len() - 2];
-
-        // Range selection removes `_callback(` from the start and `);` from the end in an allocation free way
-        let json: Response = serde_json::from_str(cleaned)?;
-
-        user_comments.extend_from_slice(&json.result.comments);
+    if top_comments {
+        user_comments = Some(json.result.top_comments.clone());
     }
 
-    Ok((comments, replies, user_comments))
+    if all_comments {
+        let mut comments = vec![];
+
+        comments.extend_from_slice(&json.result.top_comments);
+
+        for page in 2..=json.result.page_model.total_pages {
+            let url = api_url_builder(id, chapter, 100, page);
+            let response = BlockingJsonReferClient::get(&url)
+                .context("Failed to connect to Comments Section API")?;
+
+            let text = response.text().context("Failed to get JSON body")?;
+
+            // Range selection removes `_callback(` from the start and `);` from the end
+            let cleaned = &text[10..text.len() - 2];
+
+            let json: Response = serde_json::from_str(cleaned)?;
+
+            comments.extend_from_slice(&json.result.comments);
+        }
+
+        user_comments = Some(comments);
+    }
+
+    Ok((comment_count, reply_count, user_comments))
 }
 
 /// # Info
 ///
-/// 100 comments at once seems to be the max
+/// 100 comments at once is the max
 #[must_use]
 pub fn api_url_builder(id: u32, chapter: u16, comments: u16, page: u16) -> String {
     const START: &str = r"https://global.apis.naver.com/commentBox/cbox/web_neo_list_jsonp.json?ticket=webtoon&templateId=or_en&pool=cbox&lang=en";
@@ -64,7 +82,7 @@ mod parse_comments_tests {
     #[test]
     #[ignore]
     fn should_get_comment_count_from_json_response() {
-        let (comments, replies, _) = parse(1218, 137).unwrap();
+        let (comments, replies, _) = parse(1218, 137, false, false).unwrap();
 
         assert_eq!(3191, comments);
         assert_eq!(2584, replies);

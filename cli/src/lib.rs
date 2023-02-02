@@ -39,4 +39,12 @@ pub struct StoryCliArgs {
     /// The output path to save the output csv file.
     #[arg(short, long)]
     pub output: String,
+
+    /// Include the `top` comments in the output
+    #[arg(long = "top-comments")]
+    pub top_comments: bool,
+
+    /// Include all comments in the output
+    #[arg(long = "all-comments")]
+    pub all_comments: bool,
 }

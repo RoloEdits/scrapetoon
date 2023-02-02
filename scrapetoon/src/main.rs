@@ -36,6 +36,8 @@ fn main() -> Result<()> {
             pages,
             completed,
             threads,
+            top_comments,
+            all_comments,
         } => {
             let date_path = create_date_folder(&path)?;
 
@@ -51,6 +53,8 @@ fn main() -> Result<()> {
                 parsing::custom,
                 TO_SKIP,
                 completed,
+                top_comments,
+                all_comments,
                 threads,
             )?;
 

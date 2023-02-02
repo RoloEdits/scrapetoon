@@ -27,7 +27,9 @@ pub fn parse<T: Clone + Send>(
     custom: Custom<T>,
     skip_chapter: SkipChapter,
     is_completed: bool,
-    chapter_published: Option<&HashMap<u16, String>>,
+    top_comments: bool,
+    all_comments: bool,
+    chapter_published_map: Option<&HashMap<u16, String>>,
 ) -> Result<Vec<Chapter<T>>> {
     let chapters: Vec<_> = (start..=end).collect();
     let total = chapters.len() as u64;
@@ -46,7 +48,9 @@ pub fn parse<T: Clone + Send>(
                 custom,
                 skip_chapter,
                 is_completed,
-                chapter_published,
+                top_comments,
+                all_comments,
+                chapter_published_map,
             ) {
                 Ok(ok) => ok,
                 Err(err) => {
@@ -60,7 +64,7 @@ pub fn parse<T: Clone + Send>(
     Ok(vec)
 }
 
-// Just one over the limit and, for now, it is easier to follow by having explicit types and names in the argument list
+// It is easier to follow by having explicit types and names in the argument list
 #[allow(clippy::too_many_arguments)]
 fn chapter<T: Clone + Send>(
     id: u32,
@@ -71,7 +75,9 @@ fn chapter<T: Clone + Send>(
     custom_fn: Custom<T>,
     skip_chapter: SkipChapter,
     is_completed: bool,
-    chapter_published: Option<&HashMap<u16, String>>,
+    top_comments: bool,
+    all_comments: bool,
+    chapter_published_map: Option<&HashMap<u16, String>>,
 ) -> Result<Option<Chapter<T>>> {
     if skip_chapter(chapter) {
         return Ok(None);
@@ -95,7 +101,7 @@ fn chapter<T: Clone + Send>(
         let text = response.text()?;
         let temp_html = Html::parse_document(&text);
         let temp_number = chapter_number(&temp_html)?;
-        let get_date = chapter_published
+        let get_date = chapter_published_map
             .expect("No HashMap for date given")
             .get(&temp_number)
             .unwrap()
@@ -115,7 +121,8 @@ fn chapter<T: Clone + Send>(
 
     // To handle chapter misalignment, comment::parse() needs to use the passed in `chapter`, otherwise this will grab data from the bad chapter
     // as the chapter number parsed from whats displayed is contiguous, causing the shift to happen
-    let (comments, replies, user_comments) = comments::parse(id, chapter)?;
+    let (comments, replies, user_comments) =
+        comments::parse(id, chapter, top_comments, all_comments)?;
 
     let utc = utils::get_current_utc_date_verbose();
 
@@ -133,7 +140,7 @@ fn chapter<T: Clone + Send>(
         custom,
         user_comments,
         published,
-        scraped: utc,
+        timestamp: utc,
     };
 
     Ok(Some(result))

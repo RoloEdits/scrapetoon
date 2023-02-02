@@ -44,6 +44,14 @@ pub enum Source {
         #[arg(short = 'c', long = "completed")]
         completed: bool,
 
+        /// Include the `top` comments in the output
+        #[arg(long = "top-comments")]
+        top_comments: bool,
+
+        /// Include all comments in the output
+        #[arg(long = "all-comments")]
+        all_comments: bool,
+
         /// The number of threads program will use. Each one correlating to how many chapters will be scraped in parallel. USE WITH CAUTION.
         /// Trying to get too many chapters at once can cause timeout issues. Defaults to `4` threads. Setting to `0` will use all available threads.
         #[arg(short = 't', long = "threads")]

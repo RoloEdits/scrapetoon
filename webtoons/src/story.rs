@@ -25,6 +25,8 @@ pub fn parse<T: Clone + Send>(
     custom: Custom<T>,
     skip: SkipChapter,
     is_completed: bool,
+    top_comments: bool,
+    all_comments: bool,
     chapter_published: Option<&HashMap<u16, String>>,
 ) -> Result<(Story<T>, String)> {
     let (id, kebab_title) = parse_url(url);
@@ -39,6 +41,8 @@ pub fn parse<T: Clone + Send>(
         custom,
         skip,
         is_completed,
+        top_comments,
+        all_comments,
         chapter_published,
     )?;
 

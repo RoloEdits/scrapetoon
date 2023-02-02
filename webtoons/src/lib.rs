@@ -1,4 +1,4 @@
-pub mod daily;
+mod daily;
 mod factories;
 pub mod story;
 pub mod utils;
@@ -37,6 +37,8 @@ pub fn parse_series<T: Clone + Send>(
     custom: Custom<T>,
     skip: SkipChapter,
     is_completed: bool,
+    top_comments: bool,
+    all_comments: bool,
     threads: Option<usize>,
 ) -> Result<(Story<T>, String)> {
     info!("Starting Story Parsing");
@@ -57,6 +59,8 @@ pub fn parse_series<T: Clone + Send>(
             custom,
             skip,
             is_completed,
+            top_comments,
+            all_comments,
             None,
         )?;
         info!("Finished Story Parsing");
@@ -75,6 +79,8 @@ pub fn parse_series<T: Clone + Send>(
         custom,
         skip,
         is_completed,
+        top_comments,
+        all_comments,
         Some(&publish_map),
     )?;
     info!("Finished Story Parsing");
