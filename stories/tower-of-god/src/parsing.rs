@@ -187,9 +187,10 @@ pub fn custom(html: Option<&Html>, chapter: u16) -> Option<String> {
     // Saga's
     match chapter {
         1..=78 => Some("The Tower".to_string()),
-        79..=115 => Some("The Prince of Zahard".to_string()),
+        79..=117 => Some("The Prince of Zahard".to_string()),
         118..=190 => Some("The Workshop Battle".to_string()),
         191..=418 => Some("The Hell Train".to_string()),
+        419.. => Some("The Nest".to_string()),
         _ => None,
     }
 }

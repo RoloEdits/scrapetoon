@@ -1,7 +1,7 @@
 #![allow(unused)]
 
 use scraper::{Html, Selector};
-use webtoons::regex;
+use webtoons::parsing;
 
 pub const fn season(html: Option<&Html>, chapter: u16) -> Option<u8> {
     if let Some(html) = html {}
@@ -20,28 +20,11 @@ pub const fn arc(html: Option<&Html>, chapter: u16) -> Option<String> {
 
 pub fn custom(html: Option<&Html>, chapter: u16) -> Option<u16> {
     if let Some(html) = html {
-        let title_selector = Selector::parse("h1.subj_episode").unwrap();
-
-        let regex = regex![r"Episode\s(\d+)"];
-
-        let title = html
-            .select(&title_selector)
-            .into_iter()
-            .next()
-            .unwrap()
-            .text()
-            .collect::<Vec<_>>()[0];
-
-        let meaningful_chapter_number = regex
-            .captures(title)
-            .unwrap()
-            .get(1)
-            .unwrap()
-            .as_str()
+        let chapter_number = parsing::parse_title(html, r"Episode\s(\d+)")?
             .parse::<u16>()
             .unwrap();
 
-        return Some(meaningful_chapter_number);
+        return Some(chapter_number);
     }
 
     None

@@ -3,9 +3,7 @@ mod parsing;
 use anyhow::Result;
 use clap::Parser;
 use cli::StoryCliArgs;
-use webtoons::story::csv::models::IntoStoryRecord;
-use webtoons::utils;
-use webtoons::utils::CsvWrite;
+use webtoons::{CsvWrite, IntoStoryRecord, Webtoons};
 
 const TO_SKIP: fn(u16) -> bool = |chapter: u16| -> bool { matches!(chapter, 249 | 204 | 309) };
 
@@ -15,7 +13,7 @@ fn main() -> Result<()> {
     let args = StoryCliArgs::parse();
     tracing_subscriber::fmt::init();
 
-    let (story, kebab_title) = webtoons::parse_series(
+    let (story, kebab_title) = Webtoons::parse_series(
         args.start,
         args.end,
         args.pages,
@@ -31,9 +29,7 @@ fn main() -> Result<()> {
         Some(0),
     )?;
 
-    let path = utils::path_enforcer(&args.output)?;
-
-    story.into_record().write(path, &kebab_title)?;
+    story.into_record().write(&args.output, &kebab_title)?;
 
     Ok(())
 }

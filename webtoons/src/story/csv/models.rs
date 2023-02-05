@@ -46,11 +46,23 @@ pub trait IntoStoryRecord<T: Clone + Send> {
 impl<T: Clone + Send> IntoStoryRecord<T> for Story<T> {
     fn into_record(self) -> Vec<StoryRecord<T>> {
         info!("Making Story Record");
-        let mut record: Vec<StoryRecord<T>> = Vec::new();
+
+        // TODO: Eventually make this unnecessary and just directly use the story object to serialize to save on memory and allocations
 
         let total_comments = self.sum_comments();
         let total_replies = self.sum_replies();
         let total_likes = self.sum_likes();
+        let total_chapters = self.chapters.len();
+
+        let user_comments_len = self.chapters[0].user_comments.as_ref().map_or(0, Vec::len);
+
+        let size = if total_chapters > user_comments_len {
+            total_chapters
+        } else {
+            user_comments_len
+        };
+
+        let mut record: Vec<StoryRecord<T>> = Vec::with_capacity(size);
 
         let title = self.story_page.title;
         let author = self.story_page.author;
@@ -61,7 +73,6 @@ impl<T: Clone + Send> IntoStoryRecord<T> for Story<T> {
         let subscribers = self.story_page.subscribers;
         let rating = self.story_page.rating;
 
-        // TODO: Decouple comments in prep for option to have them scraped or not.
         for chapter in self.chapters {
             let chapter_record = StoryRecord {
                 title: title.clone(),
@@ -183,7 +194,7 @@ impl<T: Clone + Send> SumLikes for Story<T> {
 #[cfg(test)]
 mod story_csv_tests {
     use super::*;
-    use crate::story::chapter::comments::models::UserComment;
+
     use crate::story::chapter::models::Chapter;
     use crate::story::models::StoryPage;
 
@@ -199,21 +210,6 @@ mod story_csv_tests {
             subscribers: 0,
             rating: 0.0,
         };
-
-        // let user_comments = vec![UserComment {
-        //     username: String::new(),
-        //     replies: 0,
-        //     upvotes: 0,
-        //     downvotes: 0,
-        //     contents: String::new(),
-        //     profile_type: String::new(),
-        //     auth_provider: String::new(),
-        //     country: String::new(),
-        //     post_date: String::new(),
-        //     id_no: Some(String::new()),
-        //     user_id_no: None,
-        //     profile_user_id: None,
-        // }];
 
         let chapters: Vec<_> = vec![Chapter::<String> {
             number: 1,

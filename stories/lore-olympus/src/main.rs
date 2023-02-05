@@ -3,9 +3,7 @@ mod parsing;
 use anyhow::Result;
 use clap::Parser;
 use cli::StoryCliArgs;
-use webtoons::story::csv::models::IntoStoryRecord;
-use webtoons::utils;
-use webtoons::utils::CsvWrite;
+use webtoons::{CsvWrite, IntoStoryRecord, Webtoons};
 
 // #13: Message and Concept Art
 // #18: Q&A
@@ -21,7 +19,7 @@ fn main() -> Result<()> {
     let args = StoryCliArgs::parse();
     tracing_subscriber::fmt::init();
 
-    let (story, kebab_title) = webtoons::parse_series(
+    let (story, kebab_title) = Webtoons::parse_series(
         args.start,
         args.end,
         args.pages,
@@ -34,11 +32,10 @@ fn main() -> Result<()> {
         false,
         args.top_comments,
         args.all_comments,
-        Some(0),
+        Some(4),
     )?;
-    let path = utils::path_enforcer(&args.output)?;
 
-    story.into_record().write(path, &kebab_title)?;
+    story.into_record().write(&args.output, &kebab_title)?;
 
     Ok(())
 }

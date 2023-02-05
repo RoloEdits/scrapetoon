@@ -1,6 +1,7 @@
 mod models;
 
 use crate::factories::BlockingReferClient;
+use crate::utils;
 use anyhow::{anyhow, bail, Context, Result};
 use core::time;
 use image::{GenericImage, ImageBuffer, RgbImage};
@@ -14,7 +15,7 @@ use std::{fs, path::Path, thread};
 
 /// # Errors
 pub fn get(url: &str, path: &str, start: u16, end: u16) -> Result<()> {
-    let path = Path::new(path);
+    let path = utils::validate_path(path)?;
 
     let range: Vec<_> = (start..=end).collect();
 

@@ -1,13 +1,11 @@
 mod args;
 mod parsing;
 
-use anyhow::{bail, Result};
+use anyhow::Result;
 use args::{Scrapetoon, Source};
 use clap::Parser;
-use std::path::Path;
 use tracing::info;
-use webtoons::story::csv::models::IntoStoryRecord;
-use webtoons::utils::{create_date_folder, CsvWrite};
+use webtoons::{CsvWrite, IntoStoryRecord, Webtoons};
 
 const TO_SKIP: fn(u16) -> bool = |_chapter: u16| -> bool { false };
 
@@ -17,15 +15,9 @@ fn main() -> Result<()> {
 
     match cli.source {
         Source::Daily { path } => {
-            let date_path = create_date_folder(&path)?;
-
-            if !Path::new(&date_path).exists() {
-                bail!("Invalid output path")
-            }
-
             info!("Connecting to Daily Schedule...");
-            let daily = webtoons::parse_daily_schedule()?;
-            daily.write(&date_path, "daily-schedule.csv")?;
+            let daily = Webtoons::parse_daily_schedule()?;
+            daily.write(&path, "daily-schedule.csv")?;
             info!("Finished scraping Daily Schedule!");
         }
         Source::Story {
@@ -39,10 +31,8 @@ fn main() -> Result<()> {
             top_comments,
             all_comments,
         } => {
-            let date_path = create_date_folder(&path)?;
-
             info!("Connecting to Story Page...");
-            let (story, kebab_title) = webtoons::parse_series(
+            let (story, kebab_title) = Webtoons::parse_series(
                 start,
                 end,
                 pages,
@@ -58,7 +48,8 @@ fn main() -> Result<()> {
                 threads,
             )?;
 
-            story.into_record().write(&date_path, &kebab_title)?;
+            story.into_record().write(&path, &kebab_title)?;
+
             info!("Finished scraping {kebab_title}!");
         }
         Source::Panels {
@@ -69,7 +60,7 @@ fn main() -> Result<()> {
             threads,
         } => {
             info!("Connecting...");
-            webtoons::download_panels(&url, &path, start, end, threads)?;
+            Webtoons::download_panels(&url, &path, start, end, threads)?;
             info!("Finished Downloading Panels!");
         }
     }
