@@ -11,11 +11,14 @@ use webtoon::platform::webtoons::{Client, errors::EpisodeError};
 #[derive(Serialize)]
 struct Stats<'a> {
     id: u32,
+    creator: &'a str,
     title: &'a str,
+    genre: &'a str,
     views: u64,
     subscribers: u32,
     rating: f64,
     episode: u16,
+    season: Option<u8>,
     likes: u32,
     comments: u32,
     replies: u32,
@@ -36,7 +39,23 @@ async fn main() -> Result<()> {
             let webtoon = client.webtoon_from_url(&url)?;
 
             let id = webtoon.id();
+            let creator = webtoon
+                .creators()
+                .await?
+                .iter()
+                .map(|creator| creator.username())
+                .fold(String::new(), |mut builder, name| {
+                    builder.push_str(name);
+                    builder.push(',');
+                    builder
+                });
             let title = webtoon.title().await?;
+            let genre = webtoon
+                .genres()
+                .await?
+                .first()
+                .map(|genre| genre.as_slug())
+                .expect("At least one genre must exist");
             let subscribers = webtoon.subscribers().await?;
             let views = webtoon.views().await?;
             let rating = webtoon.rating().await?;
@@ -54,16 +73,20 @@ async fn main() -> Result<()> {
                     continue;
                 };
 
+                let season = episode.season().await?;
                 let likes = episode.likes().await?;
                 let (comments, replies) = episode.comments_and_replies().await?;
 
                 let stats = Stats {
                     id,
+                    creator: creator.trim_matches(','),
                     title: &title,
+                    genre,
                     views,
                     subscribers,
                     rating,
                     episode: number,
+                    season,
                     likes,
                     comments,
                     replies,
