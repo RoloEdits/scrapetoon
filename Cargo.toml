@@ -10,7 +10,3 @@ webtoon = { version = "0.6.1", features = ["download"]}
 csv = "1"
 anyhow = { version = "1" }
 serde = {version = "1", features = ["derive"]}
-
-# Specify version
-chrono = "0.4.40"
-regex = "1.11"
