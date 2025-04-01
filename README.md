@@ -68,9 +68,3 @@ Example plots using the data:
 ## Download
 
 Downloaded episodes are downloaded as one big image and saved as a png. The title of the image corresponds to the episode number.
-
-# License
-
-All CSV's hosted here are under a Creative Commons Zero v1.0 Universal License.
-
-All software is under an MIT License.
