@@ -51,24 +51,35 @@ pub enum Source {
     },
 }
 
-pub fn parse_range_u16(input: &str) -> Result<Range<u16>, &'static str> {
+pub fn parse_range_u16(input: &str) -> Result<Range<u16>, String> {
     let parts: Vec<&str> = input.split("..").collect();
     match parts.len() {
         1 => {
             let value = parts[0].parse::<u16>().map_err(|_| "Invalid value")?;
-            Ok(value..value) // Single value should create an empty range that runs once in a loop
+            Ok(value..value) // Single value should loop once
         }
         2 => {
-            let start = parts[0].parse::<u16>().map_err(|_| "Invalid start value")?;
-            let end = parts[1].parse::<u16>().map_err(|_| "Invalid end value")?;
+            let start = if parts[0].is_empty() {
+                1
+            } else {
+                parts[0].parse::<u16>().map_err(|_| "Invalid start value")?
+            };
+            let end = if parts[1].is_empty() {
+                // NOTE: in theory this could end up excluding the very last chapter if the total number is `u16::MAX`.
+                u16::MAX - 1 // Later on 1 is added, so must have this be one less
+            } else {
+                parts[1].parse::<u16>().map_err(|_| "Invalid end value")?
+            };
 
             if start > end {
-                return Err("Start must be less than or equal to end");
+                return Err("Start must be less than or equal to end".to_owned());
             }
 
             Ok(start..end + 1)
         }
-        _ => Err("Invalid format. Expected 'start..end' or 'value'"),
+        _ => {
+            Err("Invalid format. Expected 'start..end', '..end', 'start..', or 'value'".to_owned())
+        }
     }
 }
 #[cfg(test)]
@@ -85,5 +96,17 @@ mod test {
     fn should_be_inclusive() {
         let range = parse_range_u16("1..100").unwrap();
         assert_eq!(1..101, range);
+    }
+
+    #[test]
+    fn should_parse_open_start() {
+        let range = parse_range_u16("..100").unwrap();
+        assert_eq!(1..101, range);
+    }
+
+    #[test]
+    fn should_parse_open_end() {
+        let range = parse_range_u16("100..").unwrap();
+        assert_eq!(100..u16::MAX, range);
     }
 }
