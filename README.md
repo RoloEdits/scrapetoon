@@ -53,8 +53,8 @@ scrapetoon download --url "https://www.webtoons.com/en/action/omniscient-reader/
 
 The data gathered from here is organized like so:
 
-| id  | creator | title | genre | views | subscribers | rating | episode | season | likes | comments | replies |
-| :-: | :-----: | :---: | :---: | :---: | :---------: | ------ | ------- | ------ | ----- | -------- | ------- |
+| id  | creator | title | genre | views | subscribers | rating | episode | likes | comments | replies |
+| :-: | :-----: | :---: | :---: | :---: | :---------: | ------ | ------- | ----- | -------- | ------- |
 
 The `episode`, `likes`, `comments`, and `replies` are all relative to one episode, with a new episode on each row.
 

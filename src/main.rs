@@ -18,7 +18,6 @@ struct Stats<'a> {
     subscribers: u32,
     rating: f64,
     episode: u16,
-    season: Option<u8>,
     likes: u32,
     comments: u32,
     replies: u32,
@@ -73,7 +72,6 @@ async fn main() -> Result<()> {
                     continue;
                 };
 
-                let season = episode.season().await?;
                 let likes = episode.likes().await?;
                 let (comments, replies) = episode.comments_and_replies().await?;
 
@@ -86,7 +84,6 @@ async fn main() -> Result<()> {
                     subscribers,
                     rating,
                     episode: number,
-                    season,
                     likes,
                     comments,
                     replies,
