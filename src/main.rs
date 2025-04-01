@@ -103,7 +103,6 @@ async fn main() -> Result<()> {
 
             let episodes = args::parse_range_u16(&episodes)
                 .map_err(|err| anyhow!("failed to parse `{err}` as a valid episode number"))?;
-            eprintln!("episodes: {episodes:?}");
 
             for number in episodes {
                 eprintln!("downloading panels for episode {number}");
