@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
 
             writer.flush()?;
         }
-        Source::Panels {
+        Source::Download {
             path,
             url,
             episodes,
