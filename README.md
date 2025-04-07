@@ -42,11 +42,11 @@ One thing to watch out for is the range of episodes you wish to get. The `#NUM` 
 ### Example
 
 ```shell
-scrapetoon stats --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --episodes 1..100 --output "C:\Desktop"
+scrapetoon stats --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --episodes 1..100 --output orv.csv
 ```
 
 ```shell
-scrapetoon download --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --episodes 1..100 --output "C:\Desktop\ORV\"
+scrapetoon download --url "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154" --episodes 1..100 --output "panels/"
 ```
 
 ## Stats
