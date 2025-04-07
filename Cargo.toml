@@ -2,6 +2,7 @@
 name = "scrapetoon"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/RoloEdits/scrapetoon"
 
 [dependencies]
 clap = {version = "4", features = ["derive"]}
@@ -10,3 +11,8 @@ webtoon = { version = "0.6.1", features = ["download"]}
 csv = "1"
 anyhow = { version = "1" }
 serde = {version = "1", features = ["derive"]}
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
