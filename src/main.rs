@@ -112,9 +112,9 @@ async fn main() -> Result<()> {
 
                 match episode.download().await {
                     Ok(panels) => panels.save_single(&path).await?,
-                    Err(EpisodeError::NotViewable) => continue,
+                    Err(EpisodeError::NotViewable) => {}
                     Err(err) => return Err(err.into()),
-                };
+                }
             }
         }
     }

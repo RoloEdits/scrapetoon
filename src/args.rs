@@ -78,7 +78,7 @@ pub fn parse_range_u16(input: &str) -> Result<Range<u16>, String> {
     match parts.len() {
         1 => {
             let value = parts[0].parse::<u16>().map_err(|_| "Invalid value")?;
-            Ok(value..value) // Single value should loop once
+            Ok(value..value + 1) // Single value should loop once
         }
         2 => {
             let start = if parts[0].is_empty() {
@@ -111,7 +111,7 @@ mod test {
     #[test]
     fn should_parse_single() {
         let range = parse_range_u16("1").unwrap();
-        assert_eq!(1..1, range);
+        assert_eq!(1..2, range);
     }
 
     #[test]
