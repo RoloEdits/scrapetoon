@@ -1,19 +1,18 @@
-[workspace]
+[package]
+name = "scrapetoon"
+version = "0.1.0"
+edition = "2024"
+repository = "https://github.com/RoloEdits/scrapetoon"
 
-members = ["project_core", "line_core", "cli_core", "scrapetoon", "tower-of-god", "true-beauty", "the-god-of-high-school", "lore-olympus", "unordinary", "kubera"]
+[dependencies]
+clap = {version = "4", features = ["derive"]}
+tokio = { version = "1", features = ["full"] }
+webtoon = { version = "0.6.1", features = ["download"]}
+csv = "1"
+anyhow = { version = "1" }
+serde = {version = "1", features = ["derive"]}
 
-[workspace.dependencies]
-clap = {version = "4.0.25", features = ["derive"]}
-reqwest = {version = "0.11.13", features = ["rustls"]}
-scraper = "0.13.0"
-csv = "1.1.6"
-regex = "1.7.0"
-tokio = { version = "1.21.2", features = ["full"] }
-chrono = "0.4.23"
-thirtyfour = "0.31.0"
-static_assertions = "1.1.0"
-rayon = "1.6.1"
-indicatif = { version = "0.17.2", features = ["rayon"]}
-image = "0.24.5"
-rand = "0.8.5"
-crossbeam = "0.8.2"
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
