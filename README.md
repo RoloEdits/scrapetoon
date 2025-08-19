@@ -10,7 +10,7 @@
 
 <br/>
 
-`scrapetoon` is a commandline tool that offers a way to get a Webtoon's stats as well as the ability to download its episodes. Binaries are provided [here](https://github.com/RoloEdits/scrapetoon/releases).
+`scrapetoon` is a command-line tool that offers a way to get a Webtoon's stats as well as the ability to download its episodes. Binaries are provided [here](https://github.com/RoloEdits/scrapetoon/releases).
 
 Remember to always verify the data gathered before using!
 
@@ -53,8 +53,8 @@ scrapetoon download --url "https://www.webtoons.com/en/action/omniscient-reader/
 
 The data gathered from here is organized like so:
 
-| id  | creator | title | genre | views | subscribers | rating | episode | likes | comments | replies |
-| :-: | :-----: | :---: | :---: | :---: | :---------: | ------ | ------- | ----- | -------- | ------- |
+| id  | creator | title | genre | views | subscribers | episode | likes | comments | replies |
+| :-: | :-----: | :---: | :---: | :---: | :---------: | ------- | ----- | -------- | ------- |
 
 The `episode`, `likes`, `comments`, and `replies` are all relative to one episode, with a new episode on each row.
 
@@ -67,4 +67,4 @@ Example plots using the data:
 
 ## Download
 
-Downloaded episodes are downloaded as one big image and saved as a png. The title of the image corresponds to the episode number.
+Downloaded episodes are downloaded as one big image and saved as a PNG. The title of the image corresponds to the episode number.

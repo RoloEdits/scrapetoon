@@ -16,7 +16,6 @@ struct Stats<'a> {
     genre: &'a str,
     views: u64,
     subscribers: u32,
-    rating: f64,
     episode: u16,
     likes: u32,
     comments: u32,
@@ -57,7 +56,6 @@ async fn main() -> Result<()> {
                 .expect("At least one genre must exist");
             let subscribers = webtoon.subscribers().await?;
             let views = webtoon.views().await?;
-            let rating = webtoon.rating().await?;
 
             let episodes = args::parse_range_u16(&episodes)
                 .map_err(|err| anyhow!("failed to parse `{err}` as a valid episode number"))?;
@@ -82,7 +80,6 @@ async fn main() -> Result<()> {
                     genre,
                     views,
                     subscribers,
-                    rating,
                     episode: number,
                     likes,
                     comments,
