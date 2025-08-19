@@ -7,7 +7,7 @@ repository = "https://github.com/RoloEdits/scrapetoon"
 [dependencies]
 clap = {version = "4", features = ["derive"]}
 tokio = { version = "1", features = ["full"] }
-webtoon = { version = "0.6.1", features = ["download"]}
+webtoon = "0.9.0"
 csv = "1"
 anyhow = { version = "1" }
 serde = {version = "1", features = ["derive"]}
