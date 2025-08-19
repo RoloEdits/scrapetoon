@@ -1,5 +1,6 @@
 use std::{ops::Range, path::PathBuf};
 
+use anyhow::{Context, bail};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -69,7 +70,7 @@ pub enum Source {
     },
 }
 
-pub fn parse_range_u16(input: &str) -> Result<Range<u16>, String> {
+pub fn parse_range_u16(input: &str) -> anyhow::Result<Range<u16>> {
     if input == ".." {
         return Ok(1..u16::MAX);
     }
@@ -77,30 +78,30 @@ pub fn parse_range_u16(input: &str) -> Result<Range<u16>, String> {
     let parts: Vec<&str> = input.split("..").collect();
     match parts.len() {
         1 => {
-            let value = parts[0].parse::<u16>().map_err(|_| "Invalid value")?;
+            let value = parts[0].parse::<u16>().context("Invalid value")?;
             Ok(value..value + 1) // Single value should loop once
         }
         2 => {
             let start = if parts[0].is_empty() {
                 1
             } else {
-                parts[0].parse::<u16>().map_err(|_| "Invalid start value")?
+                parts[0].parse::<u16>().context("Invalid start value")?
             };
             let end = if parts[1].is_empty() {
                 // NOTE: in theory this could end up excluding the very last chapter if the total number is `u16::MAX`.
                 u16::MAX - 1 // Later on 1 is added, so must have this be one less
             } else {
-                parts[1].parse::<u16>().map_err(|_| "Invalid end value")?
+                parts[1].parse::<u16>().context("Invalid end value")?
             };
 
             if start > end {
-                return Err("Start must be less than or equal to end".to_owned());
+                bail!("Start must be less than or equal to end");
             }
 
             Ok(start..end + 1)
         }
         _ => {
-            Err("Invalid format. Expected 'start..end', '..end', 'start..', or 'value'".to_owned())
+            bail!("Invalid format. Expected 'start..end', '..end', 'start..', or 'value'")
         }
     }
 }

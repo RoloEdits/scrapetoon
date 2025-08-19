@@ -7,10 +7,13 @@ repository = "https://github.com/RoloEdits/scrapetoon"
 [dependencies]
 clap = {version = "4", features = ["derive"]}
 tokio = { version = "1", features = ["full"] }
-webtoon = "0.9.0"
+webtoon = { version = "0.9.0", features = ["download"] }
 csv = "1"
 anyhow = { version = "1" }
 serde = {version = "1", features = ["derive"]}
+
+[patch.crates-io]
+webtoon = { git = "https://github.com/Webtoon-Studio/webtoon.git", rev = "d8918bdd634dd0e0dbd33ee6d7cfac0a475d81d8" }
 
 # The profile that 'dist' will build with
 [profile.dist]

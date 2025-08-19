@@ -2,11 +2,11 @@ mod args;
 
 use std::fs::File;
 
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use args::{Scrapetoon, Source};
 use clap::Parser;
 use serde::Serialize;
-use webtoon::platform::webtoons::{Client, errors::EpisodeError};
+use webtoon::platform::webtoons::{Client, error::EpisodeError};
 
 #[derive(Serialize)]
 struct Stats<'a> {
@@ -34,9 +34,13 @@ async fn main() -> Result<()> {
             url,
             episodes,
         } => {
+            let file = File::create(path)?;
+            let mut writer = csv::Writer::from_writer(file);
+
             let webtoon = client.webtoon_from_url(&url)?;
 
             let id = webtoon.id();
+            let title = webtoon.title().await?;
             let creator = webtoon
                 .creators()
                 .await?
@@ -47,7 +51,6 @@ async fn main() -> Result<()> {
                     builder.push(',');
                     builder
                 });
-            let title = webtoon.title().await?;
             let genre = webtoon
                 .genres()
                 .await?
@@ -57,18 +60,12 @@ async fn main() -> Result<()> {
             let subscribers = webtoon.subscribers().await?;
             let views = webtoon.views().await?;
 
-            let episodes = args::parse_range_u16(&episodes)
-                .map_err(|err| anyhow!("failed to parse `{err}` as a valid episode number"))?;
+            let mut episodes = args::parse_range_u16(&episodes)?;
 
-            let file = File::create(path)?;
-
-            let mut writer = csv::Writer::from_writer(file);
-
-            for number in episodes {
-                eprintln!("getting stats for episode {number}");
-                let Some(episode) = webtoon.episode(number).await? else {
-                    continue;
-                };
+            while let Some(number) = episodes.next()
+                && let Some(episode) = webtoon.episode(number).await?
+            {
+                eprintln!("Getting stats for episode {number}");
 
                 let likes = episode.likes().await?;
                 let (comments, replies) = episode.comments_and_replies().await?;
@@ -76,7 +73,7 @@ async fn main() -> Result<()> {
                 let stats = Stats {
                     id,
                     creator: creator.trim_matches(','),
-                    title: &title,
+                    title: title.as_str(),
                     genre,
                     views,
                     subscribers,
@@ -98,14 +95,12 @@ async fn main() -> Result<()> {
         } => {
             let webtoon = client.webtoon_from_url(&url)?;
 
-            let episodes = args::parse_range_u16(&episodes)
-                .map_err(|err| anyhow!("failed to parse `{err}` as a valid episode number"))?;
+            let mut episodes = args::parse_range_u16(&episodes)?;
 
-            for number in episodes {
+            while let Some(number) = episodes.next()
+                && let Some(episode) = webtoon.episode(number).await?
+            {
                 eprintln!("downloading panels for episode {number}");
-                let Some(episode) = webtoon.episode(number).await? else {
-                    continue;
-                };
 
                 match episode.download().await {
                     Ok(panels) => panels.save_single(&path).await?,
