@@ -1,18 +1,18 @@
-use std::{ops::Range, path::PathBuf};
+use std::{ops::Range, path::PathBuf, str::FromStr};
 
 use anyhow::{Context, bail};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
-pub struct Scrapetoon {
+pub struct Args {
     /// Choose the source of data to scrape.
     #[command(subcommand)]
-    pub source: Source,
+    pub command: Command,
 }
 
 #[derive(Subcommand, Debug)]
-pub enum Source {
+pub enum Command {
     /// Gets a story's statistics and saves them as a CSV file.
     Stats {
         /// Path to save the output CSV file.
@@ -37,7 +37,7 @@ pub enum Source {
         ///
         /// - `..` (all available episodes).
         #[arg(short = 'e', long = "episodes")]
-        episodes: String,
+        episodes: Episodes,
     },
 
     /// Downloads a chapters panels and saves them as an image file.
@@ -66,70 +66,95 @@ pub enum Source {
         ///
         /// - `..` (all available episodes).
         #[arg(short = 'e', long = "episodes")]
-        episodes: String,
+        episodes: Episodes,
     },
 }
 
-pub fn parse_range_u16(input: &str) -> anyhow::Result<Range<u16>> {
-    if input == ".." {
-        return Ok(1..u16::MAX);
+#[derive(Debug, Clone)]
+pub struct Episodes(Range<u16>);
+
+impl Episodes {
+    #[inline]
+    pub const fn end(&self) -> usize {
+        self.0.end as usize
     }
+}
 
-    let parts: Vec<&str> = input.split("..").collect();
-    match parts.len() {
-        1 => {
-            let value = parts[0].parse::<u16>().context("Invalid value")?;
-            Ok(value..value + 1) // Single value should loop once
+impl FromStr for Episodes {
+    type Err = anyhow::Error;
+
+    #[inline]
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        if s == ".." {
+            return Ok(Self(1..u16::MAX));
         }
-        2 => {
-            let start = if parts[0].is_empty() {
-                1
-            } else {
-                parts[0].parse::<u16>().context("Invalid start value")?
-            };
-            let end = if parts[1].is_empty() {
-                // NOTE: in theory this could end up excluding the very last chapter if the total number is `u16::MAX`.
-                u16::MAX - 1 // Later on 1 is added, so must have this be one less
-            } else {
-                parts[1].parse::<u16>().context("Invalid end value")?
-            };
 
-            if start > end {
-                bail!("Start must be less than or equal to end");
+        let parts: Vec<&str> = s.split("..").collect();
+        match parts.len() {
+            1 => {
+                let value = parts[0].parse::<u16>().context("Invalid value")?;
+                Ok(Self(value..value + 1)) // Single value should loop once
             }
+            2 => {
+                let start = if parts[0].is_empty() {
+                    1
+                } else {
+                    parts[0].parse::<u16>().context("Invalid start value")?
+                };
+                let end = if parts[1].is_empty() {
+                    // NOTE: in theory this could end up excluding the very last chapter if the total number is `u16::MAX`.
+                    u16::MAX - 1 // Later on 1 is added, so must have this be one less
+                } else {
+                    parts[1].parse::<u16>().context("Invalid end value")?
+                };
 
-            Ok(start..end + 1)
-        }
-        _ => {
-            bail!("Invalid format. Expected 'start..end', '..end', 'start..', or 'value'")
+                if start > end {
+                    bail!("Start must be less than or equal to end");
+                }
+
+                Ok(Self(start..end + 1))
+            }
+            _ => {
+                bail!("Invalid format. Expected 'start..end', '..end', 'start..', or 'value'")
+            }
         }
     }
 }
+
+impl Iterator for Episodes {
+    type Item = u16;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
 
     #[test]
     fn should_parse_single() {
-        let range = parse_range_u16("1").unwrap();
+        let Episodes(range): Episodes = "1".parse().unwrap();
         assert_eq!(1..2, range);
     }
 
     #[test]
     fn should_be_inclusive() {
-        let range = parse_range_u16("1..100").unwrap();
+        let Episodes(range): Episodes = "1..100".parse().unwrap();
         assert_eq!(1..101, range);
     }
 
     #[test]
     fn should_parse_open_start() {
-        let range = parse_range_u16("..100").unwrap();
+        let Episodes(range): Episodes = "..100".parse().unwrap();
         assert_eq!(1..101, range);
     }
 
     #[test]
     fn should_parse_open_end() {
-        let range = parse_range_u16("100..").unwrap();
+        let Episodes(range): Episodes = "100..".parse().unwrap();
         assert_eq!(100..u16::MAX, range);
     }
 }
