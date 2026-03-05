@@ -1,39 +1,26 @@
 mod args;
 
-use std::fs::File;
+use std::{fs::File, sync::Arc};
 
 use anyhow::Result;
-use args::{Scrapetoon, Source};
+use args::{Args, Command};
 use clap::Parser;
-use serde::Serialize;
+use scrapetoon::Stats;
+use tokio::sync::Semaphore;
 use webtoon::platform::webtoons::{Client, error::EpisodeError};
-
-#[derive(Serialize)]
-struct Stats<'a> {
-    id: u32,
-    creator: &'a str,
-    title: &'a str,
-    genre: &'a str,
-    views: u64,
-    subscribers: u32,
-    episode: u16,
-    likes: u32,
-    comments: u32,
-    replies: u32,
-}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let cli = Scrapetoon::parse();
+    let cli = Args::parse();
 
-    let client = Client::new();
-
-    match cli.source {
-        Source::Stats {
+    match cli.command {
+        Command::Stats {
             path,
             url,
-            episodes,
+            mut episodes,
         } => {
+            let client = Client::new();
+
             let file = File::create(path)?;
             let mut writer = csv::Writer::from_writer(file);
 
@@ -59,8 +46,6 @@ async fn main() -> Result<()> {
                 .expect("At least one genre must exist");
             let subscribers = webtoon.subscribers().await?;
             let views = webtoon.views().await?;
-
-            let mut episodes = args::parse_range_u16(&episodes)?;
 
             while let Some(number) = episodes.next()
                 && let Some(episode) = webtoon.episode(number).await?
@@ -88,25 +73,40 @@ async fn main() -> Result<()> {
 
             writer.flush()?;
         }
-        Source::Download {
+        Command::Download {
             path,
             url,
-            episodes,
+            mut episodes,
         } => {
+            let client = Client::new();
+
             let webtoon = client.webtoon_from_url(&url)?;
 
-            let mut episodes = args::parse_range_u16(&episodes)?;
+            let semaphore = Arc::new(Semaphore::const_new(3));
+            let mut handles = Vec::with_capacity(episodes.end());
 
             while let Some(number) = episodes.next()
                 && let Some(episode) = webtoon.episode(number).await?
             {
-                eprintln!("downloading panels for episode {number}");
+                let path = path.clone();
+                let semaphore = semaphore.clone();
 
-                match episode.download().await {
-                    Ok(panels) => panels.save_single(&path).await?,
-                    Err(EpisodeError::NotViewable) => {}
-                    Err(err) => return Err(err.into()),
-                }
+                let handle = tokio::spawn(async move {
+                    let _permit = semaphore.acquire_owned().await.unwrap();
+
+                    eprintln!("downloading panels for episode {number}...");
+                    match episode.download().await {
+                        Ok(panels) => panels.save_single(&path).await.unwrap(),
+                        Err(EpisodeError::NotViewable) => {}
+                        Err(err) => panic!("{err}"),
+                    }
+                });
+
+                handles.push(handle);
+            }
+
+            for handle in handles {
+                handle.await?;
             }
         }
     }
